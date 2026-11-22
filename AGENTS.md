@@ -49,3 +49,8 @@ Jeśli zasady się zmieniają, zmieniamy je **tutaj**, w jednym miejscu.
 - Używamy tylko utworów w domenie publicznej i własnych wykonań (synteza z MIDI).
 - Nagrania cudzych wykonań służą najwyżej do odczytu nut; ich licencję i autora zapisujemy w
   `docs/ZRODLA.md` i podajemy w opisie filmu.
+- Wyjątek: cudze nagranie może być ścieżką dźwiękową klipu **tylko po decyzji właściciela**, zapisanej
+  w `docs/ZRODLA.md`, i tylko na wolnej licencji (np. CC BY / CC BY-SA). Wtedy w opisie filmu: autor,
+  link do źródła i licencji, informacja o zmianach; przy CC BY-SA cały klip udostępniamy na CC BY-SA.
+  Obecnie dotyczy: Chopin, Nokturn op. 9 nr 2 (Martha Goldstein, CC BY-SA 2.0). Wizualizacja liczona
+  jest wtedy z pomiaru nagrania (`wizualizacje/analiza.py`), nie z MIDI.

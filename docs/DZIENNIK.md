@@ -13,7 +13,10 @@
   Test 10 s: kontrola OK (długości równe, brak czarnych klatek, skok jasności 0,45, −14,3 LUFS, −1,5 dBTP).
 - Pełny Nokturn (`5b_topografia_tory`, 4:13, 7594 klatek, ~2 h 12 min przy 1,04 s/klatkę): kontrola OK –
   obraz 253,133 s / dźwięk 253,120 s, brak czarnych klatek, największy skok jasności 2,2, −15,2 LUFS,
-  −1,4 dBTP, h264 1080p30 + AAC 48 kHz. Plik w `wyniki/` (498 MB). Publikacja czeka na decyzję o dźwięku.
+  −1,4 dBTP, h264 1080p30 + AAC 48 kHz. Plik w `wyniki/` (498 MB).
+- Decyzja właściciela: dźwięk klipu = nagranie Marthy Goldstein (CC BY-SA 2.0), klip na CC BY-SA.
+  Wyjątek dopisany w `AGENTS.md`, decyzja w `docs/ZRODLA.md`, opis filmu z atrybucją w
+  `docs/opisy/nokturn_op9_2.md`.
 
 ## 2026-11-22 · Claude (3)
 - Na komputerze z Windows zainstalowane: Python 3.12, pakiety z `requirements.txt`, ffmpeg, Git.
