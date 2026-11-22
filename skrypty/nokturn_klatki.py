@@ -90,6 +90,22 @@ def znak_demo(img):
     return np.asarray(im)
 
 
+def podpis(img, tekst, rozmiar=24, margines=28):
+    """Podpis w prawym dolnym rogu (np. wykonawca i licencja nagrania). Wiele linii: rozdziel '\\n'."""
+    im = Image.fromarray(img).convert("RGBA")
+    warstwa = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(warstwa)
+    f = ImageFont.truetype(str(FONT), rozmiar)
+    linie = tekst.split("\\n") if "\\n" in tekst else tekst.split("\n")
+    y = H - margines
+    for i, linia in enumerate(reversed(linie)):
+        fs = f if i == len(linie) - 1 or len(linie) == 1 else ImageFont.truetype(str(FONT), int(rozmiar * 0.75))
+        x0, y0, x1, y1 = d.textbbox((0, 0), linia, font=fs)
+        y -= (y1 - y0) + 8
+        d.text((W - margines - (x1 - x0), y - y0), linia, font=fs, fill=(255, 255, 255, 190))
+    return np.asarray(Image.alpha_composite(im, warstwa).convert("RGB"))
+
+
 def main():
     ap = argparse.ArgumentParser()
     g = ap.add_mutually_exclusive_group(required=True)
@@ -99,6 +115,7 @@ def main():
     ap.add_argument("--out")
     ap.add_argument("--seed", type=int, default=20261122)
     ap.add_argument("--presety", nargs="*", default=list(PRESETY))
+    ap.add_argument("--podpis", default="", help="tekst w prawym dolnym rogu; nowa linia: \\n")
     a = ap.parse_args()
     out = katalog_wyjsciowy(a.out); out.mkdir(parents=True, exist_ok=True)
     tryb = "demo" if a.demo else "audio"
@@ -124,7 +141,7 @@ def main():
                    poczatek_opis="pierwszy atak powyżej progu głośności + 1,6 s (pierwsza słyszalna fraza)",
                    srodek_s=round(t_srod, 3), srodek_opis="połowa długości nagrania (nie utożsamiamy jej z kulminacją)",
                    kontrola_ciszy_s=round(t_cisza, 3)),
-        seed=a.seed, rozdzielczosc=[W, H], commit=commit,
+        seed=a.seed, rozdzielczosc=[W, H], commit=commit, podpis=a.podpis,
         cechy=dict(poczatek=an.cechy(t_pocz), srodek=an.cechy(t_srod), cisza=an.cechy(t_cisza)),
         presety={},
     )
@@ -141,6 +158,8 @@ def main():
             img8 = (np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8)
             if a.demo:
                 img8 = znak_demo(img8)
+            if a.podpis:
+                img8 = podpis(img8, a.podpis)
             p = out / f"{nazwa}_{etykieta}.png"
             cv2.imwrite(str(p), img8[..., ::-1])
             pliki.append(p)

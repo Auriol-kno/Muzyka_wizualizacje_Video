@@ -269,7 +269,27 @@ def preset_orbity(c, t, rng):
 
 
 # ----------------------------------------------------------------------------- 5. topografia dźwięku
-def preset_topografia(c, t, rng, analiza=None):
+def _gradient(stopy, u):
+    """Interpolacja liniowa koloru po liście stopów (równo rozłożonych na 0..1)."""
+    s = np.array([rgb(k) for k in stopy], np.float32)
+    x = np.clip(u, 0, 1) * (len(s) - 1)
+    i = np.minimum(x.astype(np.int64), len(s) - 2)
+    f = (x - i)[:, None]
+    return s[i] * (1 - f) + s[i + 1] * f
+
+
+# Paleta „tory i kulki” (inspiracje/styl_tory_kulki.jpg): granat → kobalt → turkus → róż → pomarańcz → żółć
+PALETA_TORY = ["#2A5FD0", "#2FC2C4", "#F02E9A", "#F7963A", "#F9DC4A"]
+
+
+def preset_topografia_tory(c, t, rng, analiza=None):
+    """Topografia dźwięku w kolorach „tory i kulki”. Ten sam teren co preset 5; kolor warstwic ← wysokość
+    terenu (doliny granatowe, grzbiety różowo-żółte), przesunięcie palety ← centroid (jaśniejsza barwa
+    dźwięku → cieplejsze grzbiety), wiry po atakach podświetlone różem, warstwice jak żółte/białe tory."""
+    return preset_topografia(c, t, rng, analiza, styl="tory")
+
+
+def preset_topografia(c, t, rng, analiza=None, styl="noc"):
     """Krajobraz z piasku: niskie pasmo → duże wydmy, średnie → średnie fale, wysokie → drobne grzbiety;
     ostatnie ataki (≤ 4 s) → lokalne wiry (pozycja x ← wysokość szczytu w chwili ataku, y ← jak dawno);
     kontury co stałą wysokość. Cisza → prawie płaska równina."""
@@ -309,6 +329,28 @@ def preset_topografia(c, t, rng, analiza=None):
     L = np.array([-0.55, 0.35, 0.45]); L /= np.linalg.norm(L)
     sw = np.clip(n @ L, 0, 1) ** 1.3
     kontur = (np.mod(h * 22, 1.0) < 0.07).astype(np.float32)
+    if styl == "tory":
+        # wysokość względna (odporna na skalę: percentyle), przesunięcie ku ciepłym barwom ← centroid
+        lo, hi = np.percentile(h, [3, 97])
+        u = (h - lo) / (hi - lo + 1e-9)
+        cieplo = float(np.clip((c["centroid_hz"] - 300) / 1500, 0, 1)) * 0.15
+        baza = _gradient(PALETA_TORY, np.clip(u, 0, 1) ** 0.6 * 0.88 + cieplo)
+        col = baza * (0.45 + 0.55 * sw[:, None])
+        # warstwice = tory: żółte na stokach, białe na grzbietach
+        tor = rgb("#F9DC4A") * (1 - u[:, None]) + rgb("#FFF6E8") * u[:, None]
+        col = col * (1 - 0.55 * kontur[:, None]) + tor * (0.55 * kontur[:, None])
+        # wiry po atakach: różowa poświata w ich okolicy
+        if wiry:
+            blask = np.zeros_like(h)
+            for wx, wy, s in wiry:
+                blask += s * np.exp(-((x - wx) ** 2 + (y - wy) ** 2) / 0.12)
+            b = np.clip(blask, 0, 1)[:, None] * 0.6
+            col = col * (1 - b) + rgb("#FF3FA8") * b
+        em = splat(np.stack([x, y, h], 1), col * 0.12, kam, glebia=0.4)
+        tlo = tlo_gradient(rgb("#040A1E"), rgb("#08173A"), winieta=0.4, swiatlo=(0.5, 0.42, 0.3, rgb("#0A1F4C")))
+        return kompozycja(tlo, em, 1.2, 0.35), dict(skala_wydm=round(0.30 * c["niskie"], 4), skala_fal=round(0.07 * c["srednie"], 4),
+                                                     skala_grzbietow=round(0.03 * c["wysokie"], 4), wiry=len(wiry),
+                                                     paleta="tory", przesuniecie_ciepla=round(cieplo, 3))
     kosc, roz, cien = rgb("#F3EADA"), rgb("#E0A190"), rgb("#101A3A")
     mix = np.clip(0.5 + 6 * h, 0, 1)[:, None]
     jasne = kosc * mix + roz * (1 - mix)
@@ -328,4 +370,5 @@ PRESETY = {
     "3_fraktalny_ogrod": preset_ogrod,
     "4_orbity_rezonansu": preset_orbity,
     "5_topografia_dzwieku": preset_topografia,
+    "5b_topografia_tory": preset_topografia_tory,
 }

@@ -1,5 +1,13 @@
 # Dziennik projektu
 
+## 2026-11-22 · Claude (4)
+- ComfyUI 0.3.9 działa na GTX 1060 6 GB (SDXL Lightning ~60 s/obraz); klient API w `comfyui/`.
+- Nagranie Nokturnu: Martha Goldstein (2006), CC BY-SA 2.0 – wpis w `docs/ZRODLA.md`;
+  użycie jako dźwięku klipu czeka na decyzję właściciela.
+- Właścicielowi spodobała się topografia → nowy wariant `5b_topografia_tory` w kolorach z
+  `inspiracje/styl_tory_kulki.jpg` (kolor ← wysokość terenu i centroid, wiry po atakach różowe).
+- `nokturn_klatki.py --podpis`: podpis utworu i wykonawcy w prawym dolnym rogu (prośba właściciela).
+
 ## 2026-11-22 · Claude (3)
 - Na komputerze z Windows zainstalowane: Python 3.12, pakiety z `requirements.txt`, ffmpeg, Git.
   Repo postawione z `repo.bundle`, gałęzie `claude/*` wypchnięte na GitHub (zapis działa).
