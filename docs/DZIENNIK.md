@@ -1,5 +1,9 @@
 # Dziennik projektu
 
+## 2026-11-22 · Claude (2)
+- Nowy kierunek: wizualizacje cząsteczkowe sterowane pomiarem audio (`wizualizacje/`), przekazanie od Codexa
+  opisane w `docs/visualization-handoff.md`. Folder roboczy na Windows: `D:\AI\PROJEKT_MUZYCZNY`.
+
 ## 2026-11-22 · Claude
 - Założona struktura repo: `wspolne/`, `utwory/`, `skrypty/zbuduj.py`, `docs/`, `blender/`, `comfyui/`.
 - Przeniesione trzy gotowe potoki (Chopin, Bach, Vivaldi); ścieżki i fonty niezależne od systemu.
