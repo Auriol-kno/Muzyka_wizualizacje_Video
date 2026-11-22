@@ -1,0 +1,13 @@
+# Skopiuj do config/sciezki.toml (ten plik nie trafia do repo) i wpisz ścieżki swojego komputera.
+# Na Windows można użyć litery dysku albo ścieżki UNC udziału, np. "\\\\SERWER\\Muzyka".
+[udzial]
+# gotowe klipy, podglądy i pliki WAV do publikacji
+wyniki = "D:/Muzyka_Graficznie/wyniki"
+# pliki robocze: segmenty wideo, surowe audio, klatki testowe
+robocze = "D:/Muzyka_Graficznie/robocze"
+# nagrania i nuty źródłowe (PDF, OGA, WAV)
+zrodla = "D:/Muzyka_Graficznie/zrodla"
+
+[narzedzia]
+blender = "C:/Program Files/Blender Foundation/Blender 4.2/blender.exe"
+comfyui_url = "http://127.0.0.1:8188"
