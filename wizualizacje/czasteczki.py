@@ -289,50 +289,85 @@ def preset_topografia_tory(c, t, rng, analiza=None):
     return preset_topografia(c, t, rng, analiza, styl="tory")
 
 
+_TEREN = {}
+
+
+def _teren_bazowy(rng, e):
+    """Położenia drobin i pola szumu (bez wag i wirów) dla (x,y), (x+e,y), (x,y+e). Zależą tylko od seeda,
+    więc w animacji liczymy je raz – każda klatka to już tylko ważona suma pól (+ wiry lokalnie).
+    Kolejność losowań jak dawniej, więc klatki są identyczne z wersją bez bufora."""
+    klucz = (str(rng.bit_generator.state["state"]), e)
+    if klucz not in _TEREN:
+        N = 1_700_000
+        x = (rng.random(N) * 2 - 1) * (0.6 + 2.4 * rng.random(N) ** 0.5)
+        y = 0.25 + 5.0 * rng.random(N) ** 1.5
+        duzy, sredni, drobny = szum(rng, 2.2), szum(rng, 7.0), szum(rng, 26.0)
+        pola = []
+        for ox, oy in ((0.0, 0.0), (e, 0.0), (0.0, e)):
+            px, py = x + ox, y + oy
+            pola.append(np.stack([drobny(px + 3, py), duzy(px, py), sredni(px + 7, py + 1),
+                                  1 - np.abs(drobny(px, py + 5))], 1).astype(np.float32))
+        _TEREN.clear()                     # trzymamy tylko jeden teren (≈ 0,1 GB)
+        _TEREN[klucz] = (x, y, duzy, sredni, drobny, pola)
+    return _TEREN[klucz]
+
+
 def preset_topografia(c, t, rng, analiza=None, styl="noc"):
     """Krajobraz z piasku: niskie pasmo → duże wydmy, średnie → średnie fale, wysokie → drobne grzbiety;
     ostatnie ataki (≤ 4 s) → lokalne wiry (pozycja x ← wysokość szczytu w chwili ataku, y ← jak dawno);
     kontury co stałą wysokość. Cisza → prawie płaska równina."""
     kam = Kamera((0, -0.85, 1.25), (0, 2.6, 0))
-    N = 1_700_000
-    x = (rng.random(N) * 2 - 1) * (0.6 + 2.4 * rng.random(N) ** 0.5)
-    y = 0.25 + 5.0 * rng.random(N) ** 1.5
-    duzy, sredni, drobny = szum(rng, 2.2), szum(rng, 7.0), szum(rng, 26.0)
+    e = 0.01
+    x, y, duzy, sredni, drobny, pola = _teren_bazowy(rng, e)
     wiry = []
     if analiza is not None:
         for ta in analiza.ataki[(analiza.ataki <= t) & (analiza.ataki > t - 4.0)]:
             sz = analiza.szczyty(float(ta), n=1)
             if sz:
                 f = sz[0][0]
+                narastanie = min(1.0, (t - ta) / 0.1) ** 2 * (3 - 2 * min(1.0, (t - ta) / 0.1))  # 0,1 s, bez skoku
                 wiry.append((float(np.clip((math.log2(f / 220) / 3) * 2.6 - 1.3, -1.8, 1.8)), 1.0 + (t - ta) * 0.9,
-                             float(math.exp(-(t - ta) / 2.0))))
+                             float(math.exp(-(t - ta) / 2.0) * narastanie)))
 
-    def wys(x, y):
-        xx, yy = x.copy(), y.copy()
-        for wx, wy, s in wiry:   # zawirowanie współrzędnych
-            dx, dy = xx - wx, yy - wy
-            r2 = dx * dx + dy * dy
-            a = 2.2 * s * np.exp(-r2 / 0.08)
-            ca, sa = np.cos(a), np.sin(a)
-            xx, yy = wx + dx * ca - dy * sa, wy + dx * sa + dy * ca
-        h = 0.004 * drobny(xx + 3, yy)
-        h += 0.30 * c["niskie"] * duzy(xx, yy)
-        h += 0.07 * c["srednie"] * sredni(xx + 7, yy + 1)
-        h += 0.03 * c["wysokie"] * (1 - np.abs(drobny(xx, yy + 5)))
-        for wx, wy, s in wiry:
-            h -= 0.05 * s * np.exp(-((x - wx) ** 2 + (y - wy) ** 2) / 0.05)
+    wagi = np.array([0.004, 0.30 * c["niskie"], 0.07 * c["srednie"], 0.03 * c["wysokie"]], np.float32)
+    # cząstki w zasięgu wirów (poza nim kąt zawirowania < 1e-4 rad i dołek ≈ 0) – tylko je liczymy od nowa
+    blisko = np.zeros(len(x), bool)
+    for wx, wy, s in wiry:
+        blisko |= (x - wx) ** 2 + (y - wy) ** 2 < 0.85 ** 2
+
+    def wys(k, ox, oy):
+        """Wysokość w punktach (x+ox, y+oy); k = indeks przesunięcia w buforze pól bazowych."""
+        h = pola[k] @ wagi                                  # pola bez wirów: (N, 4) · wagi
+        if wiry and blisko.any():
+            px, py = x[blisko] + ox, y[blisko] + oy
+            xx, yy = px.copy(), py.copy()
+            for wx, wy, s in wiry:   # zawirowanie współrzędnych – każdy wir tylko w swoim otoczeniu
+                dx, dy = xx - wx, yy - wy
+                m = np.flatnonzero(dx * dx + dy * dy < 0.72)
+                dx, dy = dx[m], dy[m]
+                a = 2.2 * s * np.exp(-(dx * dx + dy * dy) / 0.08)
+                ca, sa = np.cos(a), np.sin(a)
+                xx[m], yy[m] = wx + dx * ca - dy * sa, wy + dx * sa + dy * ca
+            hb = (wagi[0] * drobny(xx + 3, yy) + wagi[1] * duzy(xx, yy) + wagi[2] * sredni(xx + 7, yy + 1)
+                  + wagi[3] * (1 - np.abs(drobny(xx, yy + 5))))
+            for wx, wy, s in wiry:
+                r2 = (px - wx) ** 2 + (py - wy) ** 2
+                m = np.flatnonzero(r2 < 0.5)
+                hb[m] -= 0.05 * s * np.exp(-r2[m] / 0.05)
+            h = h.copy(); h[blisko] = hb
         return h
-    e = 0.01
-    h = wys(x, y)
-    hx = (wys(x + e, y) - h) / e; hy = (wys(x, y + e) - h) / e
+    h = wys(0, 0.0, 0.0)
+    hx = (wys(1, e, 0.0) - h) / e; hy = (wys(2, 0.0, e) - h) / e
     n = np.stack([-hx, -hy, np.ones_like(h)], 1); n /= np.linalg.norm(n, axis=1, keepdims=True)
     L = np.array([-0.55, 0.35, 0.45]); L /= np.linalg.norm(L)
     sw = np.clip(n @ L, 0, 1) ** 1.3
     kontur = (np.mod(h * 22, 1.0) < 0.07).astype(np.float32)
     if styl == "tory":
         # wysokość względna (odporna na skalę: percentyle), przesunięcie ku ciepłym barwom ← centroid
+        # (dolna granica rozpiętości: w ciszy płaska równina zostaje w środku palety, bez wzmacniania szumu)
         lo, hi = np.percentile(h, [3, 97])
-        u = (h - lo) / (hi - lo + 1e-9)
+        pol = max((hi - lo) / 2, 0.06)
+        u = 0.5 + (h - (hi + lo) / 2) / (2 * pol)
         cieplo = float(np.clip((c["centroid_hz"] - 300) / 1500, 0, 1)) * 0.15
         baza = _gradient(PALETA_TORY, np.clip(u, 0, 1) ** 0.6 * 0.88 + cieplo)
         col = baza * (0.45 + 0.55 * sw[:, None])

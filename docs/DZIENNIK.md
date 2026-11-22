@@ -7,6 +7,10 @@
 - Właścicielowi spodobała się topografia → nowy wariant `5b_topografia_tory` w kolorach z
   `inspiracje/styl_tory_kulki.jpg` (kolor ← wysokość terenu i centroid, wiry po atakach różowe).
 - `nokturn_klatki.py --podpis`: podpis utworu i wykonawcy w prawym dolnym rogu (prośba właściciela).
+- `skrypty/animacja.py`: jedno polecenie WAV → MP4 (normalizacja −15 LUFS/−1,5 dBTP, 8 procesów,
+  kodowanie H.264 w locie, kontrola jakości do `.qc.json`). Topografia przyspieszona (teren bazowy liczony
+  raz, wiry tylko lokalnie): ~1 s/klatkę przy 8 procesach. Wiry narastają 0,1 s (bez szarpnięć).
+  Test 10 s: kontrola OK (długości równe, brak czarnych klatek, skok jasności 0,45, −14,3 LUFS, −1,5 dBTP).
 
 ## 2026-11-22 · Claude (3)
 - Na komputerze z Windows zainstalowane: Python 3.12, pakiety z `requirements.txt`, ffmpeg, Git.
