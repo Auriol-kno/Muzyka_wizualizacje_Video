@@ -1,5 +1,11 @@
 # Dziennik projektu
 
+## 2026-11-22 · Claude (5)
+- Wersja 2 Nokturnu: pięć koncepcji łączących motywy z `zrodla/inspiracje/` (`wizualizacje/koncepcje.py`):
+  A złote poziomice, B rzeka iskier, C złota spirala (φ), D kryształ w jedwabiu, E pejzaż nokturnu (połączenie).
+  Wszystko sterowane pomiarem nagrania. Podglądy: `skrypty/koncepcje_podglad.py` → `robocze/koncepcje_v2/`
+  (cicho 62 s / głośno 211 s + tablica `przeglad_koncepcji.jpg`). Klatka 1–4 s w jednym procesie.
+
 ## 2026-11-22 · Claude (4)
 - ComfyUI 0.3.9 działa na GTX 1060 6 GB (SDXL Lightning ~60 s/obraz); klient API w `comfyui/`.
 - Nagranie Nokturnu: Martha Goldstein (2006), CC BY-SA 2.0 – wpis w `docs/ZRODLA.md`;
