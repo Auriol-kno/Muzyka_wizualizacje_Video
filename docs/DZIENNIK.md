@@ -11,6 +11,9 @@
   kodowanie H.264 w locie, kontrola jakości do `.qc.json`). Topografia przyspieszona (teren bazowy liczony
   raz, wiry tylko lokalnie): ~1 s/klatkę przy 8 procesach. Wiry narastają 0,1 s (bez szarpnięć).
   Test 10 s: kontrola OK (długości równe, brak czarnych klatek, skok jasności 0,45, −14,3 LUFS, −1,5 dBTP).
+- Pełny Nokturn (`5b_topografia_tory`, 4:13, 7594 klatek, ~2 h 12 min przy 1,04 s/klatkę): kontrola OK –
+  obraz 253,133 s / dźwięk 253,120 s, brak czarnych klatek, największy skok jasności 2,2, −15,2 LUFS,
+  −1,4 dBTP, h264 1080p30 + AAC 48 kHz. Plik w `wyniki/` (498 MB). Publikacja czeka na decyzję o dźwięku.
 
 ## 2026-11-22 · Claude (3)
 - Na komputerze z Windows zainstalowane: Python 3.12, pakiety z `requirements.txt`, ffmpeg, Git.
