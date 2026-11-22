@@ -1,5 +1,13 @@
 # Dziennik projektu
 
+## 2026-11-22 · Claude (3)
+- Na komputerze z Windows zainstalowane: Python 3.12, pakiety z `requirements.txt`, ffmpeg, Git.
+  Repo postawione z `repo.bundle`, gałęzie `claude/*` wypchnięte na GitHub (zapis działa).
+- Pierwsze demo klatek Nokturnu obejrzane: presety 1–4 w porządku. Topografia (5) była prawie
+  niewidoczna (jasność p99 = 27) i miała pionowy szew na środku kadru (błąd okresu w `szum`:
+  `mod(n−1)` + `mode="wrap"`). Poprawione: wzmocnienie świecenia, jaśniejsze stoki w cieniu,
+  `mode="grid-wrap"`. Po poprawce p99 = 76–83, szwu brak.
+
 ## 2026-11-22 · Claude (2)
 - Nowy kierunek: wizualizacje cząsteczkowe sterowane pomiarem audio (`wizualizacje/`), przekazanie od Codexa
   opisane w `docs/visualization-handoff.md`. Folder roboczy na Windows: `D:\AI\PROJEKT_MUZYCZNY`.

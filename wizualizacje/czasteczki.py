@@ -93,7 +93,8 @@ def szum(rng, skala, n=64):
     siatka = rng.standard_normal((n, n)).astype(np.float32)
 
     def f(x, y):
-        return map_coordinates(siatka, [np.mod(y * skala, n - 1), np.mod(x * skala, n - 1)], order=3, mode="wrap")
+        # "grid-wrap" = okres dokładnie n, gładko przez krawędź; dawne mod(n−1) + "wrap" dawało szew przy x = 0
+        return map_coordinates(siatka, [np.mod(y * skala, n), np.mod(x * skala, n)], order=3, mode="grid-wrap")
     return f
 
 
@@ -311,11 +312,13 @@ def preset_topografia(c, t, rng, analiza=None):
     kosc, roz, cien = rgb("#F3EADA"), rgb("#E0A190"), rgb("#101A3A")
     mix = np.clip(0.5 + 6 * h, 0, 1)[:, None]
     jasne = kosc * mix + roz * (1 - mix)
-    col = cien * (1 - sw[:, None]) * 0.5 + jasne * sw[:, None]
+    col = cien * (1 - sw[:, None]) * 0.9 + jasne * sw[:, None]
     col = col * (0.75 + 0.6 * kontur[:, None])
-    em = splat(np.stack([x, y, h], 1), col * 0.018, kam, glebia=0.4)
+    # wzmocnienie 0.085 (było 0.018) i jaśniejsze stoki w cieniu: przy 1,7 mln drobin rozłożonych na całą
+    # równinę krajobraz ginął w tle (p99 jasności 27 wobec 57–164 w pozostałych presetach)
+    em = splat(np.stack([x, y, h], 1), col * 0.085, kam, glebia=0.4)
     tlo = tlo_gradient(rgb("#050816"), rgb("#0A1028"))
-    return kompozycja(tlo, em, 1.15, 0.25), dict(skala_wydm=round(0.30 * c["niskie"], 4), skala_fal=round(0.07 * c["srednie"], 4),
+    return kompozycja(tlo, em, 1.25, 0.30), dict(skala_wydm=round(0.30 * c["niskie"], 4), skala_fal=round(0.07 * c["srednie"], 4),
                                                   skala_grzbietow=round(0.03 * c["wysokie"], 4), wiry=len(wiry))
 
 

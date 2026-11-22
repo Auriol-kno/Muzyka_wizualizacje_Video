@@ -14,16 +14,16 @@ Wizualizacje związków muzyki i matematyki (fale, rezonans, interferencja, pias
   Każdy preset zwraca `parametry`, które trafiają do manifestu.
 - ✅ `skrypty/nokturn_klatki.py` – `--audio plik` lub `--demo`; manifest JSON, arkusz porównawczy,
   kontrola wymiarów i reakcji na ciszę.
-- ⏳ Pierwsze uruchomienie demo przerwane na prośbę właściciela (przeniesienie projektu na dysk D:).
-  Klatek jeszcze nie obejrzano – **następny krok: uruchomić i sprawdzić**.
+- ✅ Demo uruchomione i obejrzane (10 klatek 1920×1080, kontrola ciszy = zera). Topografia rozjaśniona
+  i bez szwu na środku kadru. **Następny krok: właściciel ocenia kierunki** (`arkusz_porownawczy.png`
+  w `robocze/nokturn_op9_2_klatki`).
 
 ## Blokady
 - **Brak nagrania Nokturnu** o znanym źródle i licencji → dokładna synchronizacja zablokowana.
   Tryb demo używa własnej frazy testowej w Es-dur (nie Chopin) i oznacza klatki napisem „DEMO”.
-- **Zapis na GitHub**: Claude i Codex dostają 403. Właściciel musi dodać repo do instalacji aplikacji
-  (Claude: https://github.com/apps/claude/installations/select_target; Codex:
-  https://github.com/settings/installations/176891368). Do tego czasu praca jest w folderze
-  `D:\AI\PROJEKT_MUZYCZNY` (kopia kodu + `repo.bundle` z historią gałęzi).
+- ~~Zapis na GitHub~~: rozwiązane 2026-11-22 – lokalne repo w `D:\AI\PROJEKT_MUZYCZNY\Muzyka_wizualizacje_Video`
+  pushuje na GitHub przez Git Credential Manager (logowanie właściciela). Aplikacje Claude/Codex na
+  GitHubie nadal mogą dostawać 403 – to osobna sprawa.
 
 ## Weryfikacja
 ```
