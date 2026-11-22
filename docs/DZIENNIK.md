@@ -1,5 +1,15 @@
 # Dziennik projektu
 
+## 2026-11-22 · Claude (7)
+- Właściciel wybrał koncepcję 3 „Góry ze strun”: klip na tym samym nagraniu, **720p, 25 fps** (wyjątek od
+  standardu 1080p30 na wyraźną prośbę właściciela), delikatny ruch kamery wokół.
+- Przestrzeń wokół gór: ląd z nici do horyzontu, pierścień dalekich pasm, kopuła gwiazd (paralaksa),
+  księżyc w kierunku kontry, mgła do 10 j. (gęstość liczona raz, dryfuje). Kamera: jedno okrążenie
+  przez cały utwór, łagodny start i koniec, „oddech” odległości i wysokości (`kamera_struny`).
+- `animacja.py`: sceny z `koncepcje_v2` (ścieżki kamery `SCIEZKI_KAMERY`), `--fps`, `--rozmiar`
+  (render 1080p, skalowanie lanczos). Test 10 s (205–215 s): kontrola OK (10,0/10,0 s, brak czarnych
+  klatek, skok jasności 0,53, −15,0 LUFS, −1,5 dBTP).
+
 ## 2026-11-22 · Claude (6)
 - Wersja 2, runda 2 (`inspiracje/2 wariacja`, prośba właściciela: dużo drobin, kamera wokół motywu, światło,
   rozbłyski, gradienty): `wizualizacje/koncepcje_v2.py` – sceny 3D z orbitą kamery (2–3 mln drobin):

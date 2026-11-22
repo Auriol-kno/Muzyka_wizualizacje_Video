@@ -363,11 +363,88 @@ def _struny(ny=240, nx=10_000, R=3.3, e=0.008, seed=303):
     return _BUF[k]
 
 
-def k3_struny(c, t, analiza=None, azymut=20.0):
-    """3. Góry ze strun: pasmo gór utkane z 240 równoległych nici (~1,9 mln drobin) i mgła w dolinach
-    (0,7 mln). Każda nić to struna: nuta pobudza strunę o numerze ← wysokości dźwięku (88 klawiszy
-    rozłożonych na nici), struna drga własnym drganiem (sin(kπx/L)) i świeci złotem, potem gaśnie."""
-    kam = kamera_orbita(azymut, promien=6.0, wys=2.0, cel=(0, 0, 0.3))
+_DAL = {}
+
+
+def _lad_daleki(seed=313, R0=2.9, R1=15.0):
+    """Ląd wokół gór ze strun: te same nici ciągną się aż do horyzontu, a na obrzeżu wyrasta pierścień
+    wysokich, dalekich pasm (statyczny – nie gra, tylko daje przestrzeń). Normalne liczone raz."""
+    if "lad" not in _DAL:
+        r = np.random.default_rng(seed)
+        ny, nx = 460, 4000
+        yr = np.linspace(-R1, R1, ny)
+        x = np.tile(np.linspace(-R1, R1, nx), ny); y = np.repeat(yr, nx)
+        rad = np.hypot(x, y)
+        ok = (rad > R0) & (rad < R1)
+        x, y, rad = x[ok].astype(np.float32), y[ok].astype(np.float32), rad[ok]
+        n1, n2 = szum(r, 0.22), szum(r, 0.8)
+        e = 0.02
+
+        def wys(px, py):
+            pr = np.hypot(px, py)
+            a = n1(px + 20, py + 20)
+            gory = (0.35 * a + 0.9 * np.clip(1 - np.abs(a), 0, 1) ** 3) * (0.03 + 2.8 * gladko(6.5, 13.0, pr))
+            return gory + 0.06 * n2(px, py) * gladko(R0, 5.0, pr)
+        h = wys(x, y)
+        n = normalne(h, wys(x + e, y), wys(x, y + e), e)
+        _DAL["lad"] = (x, y, h.astype(np.float32), n.astype(np.float32), rad)
+        G = 9000
+        v = r.standard_normal((G, 3)); v[:, 2] = np.abs(v[:, 2]) * 0.9 + 0.03
+        v /= np.linalg.norm(v, axis=1, keepdims=True)
+        _DAL["gwiazdy"] = (v * 48, gradient(["#9CC4FF", "#FFFFFF", "#FFE3A3"], r.random(G)), r.lognormal(0, 1.0, G),
+                           r.random(G) * 6.283, 0.5 + 2 * r.random(G))
+    return _DAL["lad"], _DAL["gwiazdy"]
+
+
+def zanik_przy_kamerze(P, kam, d0=1.0, d1=2.6):
+    """Drobiny tuż przy obiektywie gasną (inaczej przelatujący ląd daje białe plamy)."""
+    return gladko(d0, d1, np.linalg.norm(P - kam.pos[None, :], axis=1))
+
+
+def przestrzen(kam, t, c, em):
+    """Dalszy ląd i pasma, gwiazdy z migotaniem, księżyc nisko w kierunku kontry."""
+    (x, y, h, n, rad), (G, kg, jg, fg, sg) = _lad_daleki()
+    P = np.stack([x, y, h], 1)
+    dif, rim, pol = oswietlenie(n, P, kam)
+    u = np.clip(h / 2.6, 0, 1)
+    baza = gradient(["#172848", "#2A416E", "#6A84B4"], (0.25 + 0.75 * u) * (0.35 + 0.65 * dif))
+    gz = np.clip(rim * 1.6 * (0.2 + 0.8 * u), 0, 1) ** 2 * (0.4 + 0.6 * c["energia"])
+    col = baza * (1 - gz[:, None]) + gradient(ZLOTE, gz) * gz[:, None] * 1.2
+    col *= (gladko(2.9, 3.6, rad) * zanik_przy_kamerze(P, kam))[:, None]
+    col = atmosfera(col, P, kam, d0=4.0, d1=16.0)
+    # jasność × (odległość/ostrość)^1,2 – splat przyciemnia dalekie drobiny, a ląd ma być widoczny aż po horyzont
+    d = np.linalg.norm(P - kam.pos[None, :], axis=1)
+    kompens = np.clip(d / kam.ostrosc, 0.3, 3.0) ** 1.2
+    em += splat(P, col * (0.12 * kompens * (1.8 - 0.8 * u))[:, None], kam, glebia=0.3, warstwy=3)
+    mig = 0.6 + 0.4 * np.sin(fg + t * sg)
+    em += splat(G, kg * (jg * mig * 14)[:, None], kam, glebia=0.0, warstwy=1)
+    # księżyc: tarcza + halo, w kierunku kontry (świeci zza gór, gdy kamera patrzy pod światło)
+    sx, sy, ok = ekran(kam, kam.pos + KONTRA * 60)
+    if ok[0]:
+        q = np.zeros((H // 2, W // 2, 3), np.float32)
+        cv2.circle(q, (int(sx[0] / 2), int(sy[0] / 2)), 9, tuple(float(v) for v in rgb("#FFE9C2") * 3.0), -1, cv2.LINE_AA)
+        q = cv2.GaussianBlur(q, (0, 0), 1.2) + cv2.GaussianBlur(q, (0, 0), 14) * 0.6 + cv2.GaussianBlur(q, (0, 0), 50) * 0.5
+        em += cv2.resize(q, (W, H))
+    return em
+
+
+def kamera_struny(t, dlugosc):
+    """Delikatna orbita: jedno okrążenie przez cały utwór, łagodny start i koniec (u − sin 2πu / 2π),
+    powolny „oddech” odległości i wysokości. Maks. ~2,8°/s w połowie utworu."""
+    u = float(np.clip(t / max(dlugosc, 1e-6), 0, 1))
+    luk = u - math.sin(2 * math.pi * u) / (2 * math.pi)
+    az = -25 + 360 * luk
+    promien = 6.3 + 0.35 * math.sin(2 * math.pi * u * 1.5)
+    wys = 1.75 + 0.28 * math.sin(2 * math.pi * u * 2 + 0.7)
+    return kamera_orbita(az, promien=promien, wys=wys, cel=(0, 0, 0.32 + 0.05 * math.sin(2 * math.pi * u)))
+
+
+def k3_struny(c, t, analiza=None, azymut=20.0, kam=None, z_przestrzenia=True):
+    """3. Góry ze strun: pasmo gór utkane z 240 równoległych nici (~1,9 mln drobin) i mgła w dolinach.
+    Każda nić to struna: nuta pobudza strunę o numerze ← wysokości dźwięku (88 klawiszy rozłożonych
+    na nici), struna drga własnym drganiem (sin(kπx/L)) i świeci złotem, potem gaśnie.
+    Przestrzeń: ląd z nici do horyzontu, pierścień dalekich pasm, gwiazdy, księżyc, warstwy mgły."""
+    kam = kam or kamera_orbita(azymut, promien=6.0, wys=2.0, cel=(0, 0, 0.3))
     tlo, zrodlo = tlo_sceny(kam, poswiata="#3A5A9A")
     x, y, wiersz, dlug, pola, e, ny = _struny()
     amp = np.array([0.30 + 0.65 * c["niskie"], 0.04 + 0.08 * c["srednie"], 0.006 + 0.01 * c["wysokie"]], np.float32)
@@ -396,19 +473,29 @@ def k3_struny(c, t, analiza=None, azymut=20.0):
     col = baza * (1 - gz[:, None]) + gradient(ZLOTE, gz) * gz[:, None] * 1.3
     col += rim[:, None] * LODOWY * 0.15 + pol[:, None] * ZLOTO_JASNE * 0.5
     col += np.clip(blask, 0, 1.5)[:, None] * ZLOTO_JASNE * 2.5
-    col *= gladko(3.3, 2.3, np.hypot(x, y))[:, None]
+    col *= gladko(3.3, (2.8 if z_przestrzenia else 2.3), np.hypot(x, y))[:, None]
     col = atmosfera(col, P, kam)
     em = splat(P, col * 0.05, kam, glebia=0.35, warstwy=4)
-    # mgła w dolinach: płaska warstwa drobin, gęstość ← szum, dryfuje powoli
-    r = np.random.default_rng(31)
-    M = 700_000
-    mx = (r.random(M) * 2 - 1) * 3.3 + 0.04 * t; my = (r.random(M) * 2 - 1) * 3.3
-    mx = np.mod(mx + 3.3, 6.6) - 3.3
-    mz = 0.02 + 0.16 * r.random(M) ** 2
-    gest = np.clip(szum(np.random.default_rng(32), 1.2)(mx, my) * 0.6 + 0.3, 0, 1) ** 2 * gladko(3.3, 2.2, np.hypot(mx, my))
-    em += splat(np.stack([mx, my, mz], 1), rgb("#9FB7DA")[None, :] * (gest * 0.03 * (0.6 + 0.6 * c["energia"]))[:, None],
-                kam, glebia=0.6)
-    em += pyl(kam, t, c, N=15_000, sila=0.4)
+    if z_przestrzenia:
+        em = przestrzen(kam, t, c, em)
+    # mgła: warstwy drobin nad dolinami, gęstość ← szum, dryfuje powoli (z przestrzenią sięga daleko)
+    zas = 10.0 if z_przestrzenia else 3.3
+    klucz = ("mgla", z_przestrzenia)
+    if klucz not in _DAL:                        # gęstość liczona raz; cała mgła dryfuje razem z wiatrem
+        r = np.random.default_rng(31)
+        M = 1_000_000 if z_przestrzenia else 700_000
+        mx0 = (r.random(M) * 2 - 1) * zas; my = (r.random(M) * 2 - 1) * zas
+        mz = 0.02 + (0.3 if z_przestrzenia else 0.16) * r.random(M) ** 2
+        g0 = np.clip(szum(np.random.default_rng(32), 0.6 if z_przestrzenia else 1.2)(mx0, my) * 0.6 + 0.3, 0, 1) ** 2
+        _DAL[klucz] = (mx0, my, mz, g0)
+    mx0, my, mz, g0 = _DAL[klucz]
+    mx = np.mod(mx0 + 0.04 * t + zas, 2 * zas) - zas
+    gest = g0 * gladko(zas, zas * 0.65, np.hypot(mx, my))
+    Pm = np.stack([mx, my, mz], 1)
+    if z_przestrzenia:
+        gest *= zanik_przy_kamerze(Pm, kam, 1.5, 3.5)
+    em += splat(Pm, rgb("#9FB7DA")[None, :] * (gest * 0.03 * (0.6 + 0.6 * c["energia"]))[:, None], kam, glebia=0.6)
+    em += pyl(kam, t, c, N=20_000, R=4.2 if z_przestrzenia else 3.2, sila=0.4)
     szczyty, _ = najwyzsze(kam, x, y, h, h * (gz + 0.05) + blask * 0.3)
     sila = 0.1 + 0.8 * c["impuls_ataku"]
     em += gwiazdki(szczyty[:1], [sila])
@@ -523,6 +610,9 @@ def k5_membrana(c, t, analiza=None, azymut=20.0):
     return wywolanie(tlo, em, 1.0), dict(mody=[(m, nn, round(a, 4)) for m, nn, a, _ in mody],
                                         bas_j0=round(0.06 + 0.16 * c["niskie"], 3))
 
+
+# ścieżki kamery dla pełnych klipów: f(t, długość utworu) -> Kamera
+SCIEZKI_KAMERY = {"3_gory_ze_strun": kamera_struny}
 
 KONCEPCJE_V2 = {
     "1_wyspa_poziomic": k1_wyspa,
