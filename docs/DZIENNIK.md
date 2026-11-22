@@ -1,5 +1,13 @@
 # Dziennik projektu
 
+## 2026-11-22 · Claude (6)
+- Wersja 2, runda 2 (`inspiracje/2 wariacja`, prośba właściciela: dużo drobin, kamera wokół motywu, światło,
+  rozbłyski, gradienty): `wizualizacje/koncepcje_v2.py` – sceny 3D z orbitą kamery (2–3 mln drobin):
+  1 wyspa poziomic, 2 wstęga iskier (Möbius), 3 góry ze strun (nuta → struna drga), 4 dolina nokturnu,
+  5 membrana Bessela (tryby J_m(kr)cos(mθ) z widma). Światło stałe w świecie (klucz + kontra), flara obiektywu,
+  rozbłyski gwiazdkowe, smuga anamorficzna, mgła głębi, tonemapping „screen” + korekta. Złoto: nasycone odcienie
+  (jasne bielały w tonemappingu). Podglądy + klipy orbity: `skrypty/koncepcje2_podglad.py`; przegląd w Claude Design.
+
 ## 2026-11-22 · Claude (5)
 - Wersja 2 Nokturnu: pięć koncepcji łączących motywy z `zrodla/inspiracje/` (`wizualizacje/koncepcje.py`):
   A złote poziomice, B rzeka iskier, C złota spirala (φ), D kryształ w jedwabiu, E pejzaż nokturnu (połączenie).
