@@ -1,5 +1,13 @@
 # Dziennik projektu
 
+## 2026-11-23 · Claude (8)
+- ComfyUI do pracy lokalnej (prośba właściciela): `python -m comfyui.uruchom` sprawdza/uruchamia serwer
+  portable w tle (tylko 127.0.0.1:8188, folder z `comfyui_folder` w `config/sciezki.toml`, dziennik w
+  `<robocze>/comfyui/serwer.log`), `--stan`, `--stop`. Portable widzi modele Comfy Desktop przez
+  `extra_model_paths.yaml` (wzór w repo; bez BOM – inaczej 0.3.9 nie startuje). Workflowy jako JSON w
+  `comfyui/workflows/` do otwarcia w interfejsie. Test: tło SDXL 1344×768 wygenerowane przez klienta (184 s
+  z ładowaniem modelu). Desktop (8189) zostaje do ręcznej pracy; obie instalacje dzielą kartę 6 GB.
+
 ## 2026-11-22 · Claude (4)
 - ComfyUI 0.3.9 działa na GTX 1060 6 GB (SDXL Lightning ~60 s/obraz); klient API w `comfyui/`.
 - Nagranie Nokturnu: Martha Goldstein (2006), CC BY-SA 2.0 – wpis w `docs/ZRODLA.md`;
