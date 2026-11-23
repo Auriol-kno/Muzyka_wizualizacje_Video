@@ -1,0 +1,81 @@
+{
+  "1": {
+    "class_type": "MGKlip",
+    "inputs": {
+      "wav": "Frederic_Chopin_-_Nocturne_Eb_major_Opus_9,_number_2.wav",
+      "preset": "3_gory_ze_strun",
+      "od_s": 205.0,
+      "do_s": 215.0,
+      "fps": 12.5,
+      "rozmiar": "1280x720",
+      "seed": 20261122,
+      "podpis": "Fryderyk Chopin – Nokturn Es-dur op. 9 nr 2\\nwyk. Martha Goldstein · CC BY-SA 2.0"
+    }
+  },
+  "2": {
+    "class_type": "VHS_LoadVideoPath",
+    "inputs": {
+      "video": [
+        "1",
+        0
+      ],
+      "force_rate": 0,
+      "custom_width": 0,
+      "custom_height": 0,
+      "frame_load_cap": 0,
+      "skip_first_frames": 0,
+      "select_every_nth": 1,
+      "format": "None"
+    }
+  },
+  "3": {
+    "class_type": "RIFE VFI",
+    "inputs": {
+      "frames": [
+        "2",
+        0
+      ],
+      "ckpt_name": "rife49.pth",
+      "multiplier": 2,
+      "clear_cache_after_n_frames": 10,
+      "fast_mode": true,
+      "ensemble": true,
+      "scale_factor": 1.0,
+      "dtype": "float32",
+      "torch_compile": false,
+      "batch_size": 1
+    }
+  },
+  "4": {
+    "class_type": "VHS_VideoCombine",
+    "inputs": {
+      "images": [
+        "3",
+        0
+      ],
+      "audio": [
+        "2",
+        2
+      ],
+      "frame_rate": 25.0,
+      "loop_count": 0,
+      "filename_prefix": "muzyka_graficznie/plynna",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 18,
+      "save_metadata": false,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true
+    }
+  },
+  "5": {
+    "class_type": "MGKontrola",
+    "inputs": {
+      "pliki": [
+        "4",
+        0
+      ]
+    }
+  }
+}

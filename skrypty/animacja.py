@@ -158,7 +158,7 @@ def main():
     ap.add_argument("--procesy", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     ap.add_argument("--crf", type=int, default=18)
     ap.add_argument("--out", help="plik MP4 (domyślnie w folderze wyniki z config/sciezki.toml)")
-    ap.add_argument("--fps", type=int, default=FPS, help="klatki na sekundę (standard serii: 30)")
+    ap.add_argument("--fps", type=float, default=FPS, help="klatki na sekundę (standard serii: 30; ułamek, np. 12.5, pod interpolację RIFE w ComfyUI)")
     ap.add_argument("--rozmiar", default="", help="rozdzielczość wyjścia, np. 1280x720 (render 1920×1080, "
                                                   "skalowanie lanczos – cienkie nici zostają gładkie)")
     a = ap.parse_args()
@@ -172,7 +172,7 @@ def main():
     skala = ["-vf", f"scale={a.rozmiar.replace('x', ':')}:flags=lanczos"] if a.rozmiar else []
     wav = Path(a.wav)
     wyniki, robocze = sciezki()
-    nazwa = (f"{wav.stem[:60]}_{a.preset}" + (f"_{a.rozmiar}" if a.rozmiar else "") + (f"_{fps}fps" if fps != FPS else "")
+    nazwa = (f"{wav.stem[:60]}_{a.preset}" + (f"_{a.rozmiar}" if a.rozmiar else "") + (f"_{fps:g}fps" if fps != FPS else "")
              + (f"_{a.od:g}-{a.do:g}s" if a.do else ""))
     out = Path(a.out) if a.out else wyniki / f"{nazwa}.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -190,8 +190,8 @@ def main():
 
     enc = subprocess.Popen(
         ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
-         "-s", f"{W}x{H}", "-r", str(fps), "-i", "-", "-i", str(audio), "-map", "0:v", "-map", "1:a", *skala,
-         "-c:v", "libx264", "-preset", "medium", "-crf", str(a.crf), "-pix_fmt", "yuv420p", "-r", str(fps),
+         "-s", f"{W}x{H}", "-r", f"{fps:g}", "-i", "-", "-i", str(audio), "-map", "0:v", "-map", "1:a", *skala,
+         "-c:v", "libx264", "-preset", "medium", "-crf", str(a.crf), "-pix_fmt", "yuv420p", "-r", f"{fps:g}",
          "-c:a", "aac", "-b:a", "256k", "-ar", "48000", "-shortest", "-movflags", "+faststart", str(out)],
         stdin=subprocess.PIPE)
     ctx = mp.get_context("spawn")
@@ -199,7 +199,7 @@ def main():
         t1 = time.time()
         for k, (i, dane) in enumerate(pool.imap(_klatka, range(n), chunksize=2), 1):
             enc.stdin.write(dane)
-            if k % (fps * 2) == 0 or k == n:
+            if k % max(1, round(fps * 2)) == 0 or k == n:
                 el = time.time() - t1
                 print(f"  klatka {k}/{n}  {el / k:.2f} s/kl.  zostało ~{(n - k) * el / k / 60:.0f} min", flush=True)
     enc.stdin.close()

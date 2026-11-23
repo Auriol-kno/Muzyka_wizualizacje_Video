@@ -1,5 +1,15 @@
 # Dziennik projektu
 
+## 2026-11-23 · Claude (10)
+- Dodatki ComfyUI (prośba właściciela, pakiet 1): Manager (wbudowany, `--enable-manager` w `uruchom.py`),
+  VideoHelperSuite, Frame-Interpolation (RIFE), Crystools; modele Real-ESRGAN ×2/×4 (BSD-3; 4x-UltraSharp
+  odrzucony – CC BY-NC). Zależności instalowane z przypiętym PyTorch 2.14.1+cu126, bez CuPy; `pip check` OK.
+- Nowy węzeł `MGKontrola` (kontrola jakości jak w potoku, `skrypty/kontrola.py`) i ułamkowe fps w
+  `animacja.py`/`MGKlip` (12,5 fps pod RIFE). Workflowy: `wizualizacja_plynna` (12,5 fps + RIFE ×2 → 25 fps:
+  5 s klipu w 185 s zamiast 290 s; kontrola OK: 4,92/4,91 s, skok 0,54, −15,1 LUFS, −1,4 dBTP) i
+  `wizualizacja_ostrzejsza` (720p → Real-ESRGAN ×2 → 1080p partiami po 32 klatki, ~3 s/klatkę; kontrola OK:
+  5,0/4,99 s, skok 0,51, −15,1 LUFS, −1,4 dBTP).
+
 ## 2026-11-23 · Claude (9)
 - ComfyUI generuje nasze wizualizacje (prośba właściciela): węzły „Muzyka Graficznie” (`comfyui/wezly/`,
   łącze katalogu w `custom_nodes/muzyka_graficznie`): `MGKlatki` (klatki z dźwięku → IMAGE) i `MGKlip`

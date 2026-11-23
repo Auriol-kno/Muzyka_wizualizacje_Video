@@ -9,7 +9,8 @@ Wszystko działa na tym komputerze (GTX 1060 6 GB), serwer słucha tylko na `127
 | Węzeł | Wejście | Wyjście |
 |---|---|---|
 | **klatki z dźwięku** (`MGKlatki`) | WAV, preset, chwile w s (`62, 211`), rozmiar, seed, podpis | `IMAGE` – klatki do podglądu lub img2img |
-| **klip MP4** (`MGKlip`) | WAV, preset, od–do (0 = do końca), fps, rozmiar, seed, podpis | ścieżka MP4, raport kontroli (JSON), 4 klatki podglądu |
+| **klip MP4** (`MGKlip`) | WAV, preset, od–do (0 = do końca), fps (też ułamek, np. 12,5), rozmiar, seed, podpis | ścieżka MP4, raport kontroli (JSON), 4 klatki podglądu |
+| **kontrola jakości MP4** (`MGKontrola`) | pliki z „Video Combine” albo ścieżka MP4 | raport (JSON), ok – ta sama kontrola co w potoku (`skrypty/kontrola.py`) |
 
 - Presety: sceny 3D `1_wyspa_poziomic` … `5_membrana_bessela` (z orbitą kamery, `3_gory_ze_strun` domyślny)
   i cząsteczkowe `1_cymatyka_zloty_piasek` … `5b_topografia_tory`.
@@ -27,7 +28,28 @@ Gotowe workflowy (`comfyui/workflows/`, otwórz przeciągając plik na okno Comf
 | `wizualizacja_podglad.json` | klatki z 62 s i 211 s | ~25 s |
 | `wizualizacja_stylizowana.json` | klatka 211 s → SDXL img2img (siła 0,35: kształt z dźwięku zostaje) | ~2 min |
 | `wizualizacja_klip.json` | 10 s klipu 720p25 z podpisem + podgląd | ~1 min/2 s klipu |
+| `wizualizacja_plynna.json` | render w 12,5 fps + RIFE ×2 → 25 fps (krótkie klipy) + kontrola | 5 s klipu: 185 s (bez RIFE 290 s) |
+| `wizualizacja_ostrzejsza.json` | klip 720p → Real-ESRGAN ×2 → 1080p, partiami (także cały utwór) + kontrola | ~3 s/klatkę (5 s klipu: ~7 min; cały utwór ~5 h) |
 | `tlo_sdxl.json`, `stylizacja_sdxl.json` | samo SDXL: tło / stylizacja wgranego obrazu | ~1 min |
+
+## Dodatki (custom nodes) i modele
+
+| Dodatek | Po co | Licencja |
+|---|---|---|
+| ComfyUI-Manager (wbudowany, `--enable-manager`) | instalacja / aktualizacja dodatków z interfejsu | GPL-3.0 |
+| [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) | MP4 ↔ klatki, zapis H.264 z dźwiękiem, partie | GPL-3.0 |
+| [ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation) | RIFE: klatki pośrednie (model pobiera się przy pierwszym użyciu) | MIT |
+| [ComfyUI-Crystools](https://github.com/crystian/ComfyUI-Crystools) | pasek zajętości karty / VRAM / RAM w interfejsie | MIT |
+| `RealESRGAN_x2plus.pth`, `RealESRGAN_x4plus.pth` (`models/upscale_models`) | powiększanie | BSD-3 |
+
+Instalacja (w `ComfyUI/custom_nodes`: `git clone --depth 1 <repo>`), zależności **z przypiętym PyTorch**, żeby
+pip nie podmienił wersji cu126 na kompilację bez GTX 1060:
+```powershell
+<comfyui_folder>\python_embeded\python.exe -s -m pip install -c stale.txt -r ComfyUI\manager_requirements.txt opencv-contrib-python imageio-ffmpeg einops kornia scipy tqdm deepdiff pynvml py-cpuinfo piexif
+```
+`stale.txt`: `torch==2.14.1+cu126`, `torchvision==0.29.1+cu126`, `torchaudio==2.11.0+cu126`, `numpy==2.2.0`.
+Bez CuPy (`install.py` Frame-Interpolation go instaluje) – RIFE go nie potrzebuje.
+Unikamy `4x-UltraSharp` i podobnych: licencja CC BY-NC (bez użycia komercyjnego).
 
 ## Dwie instalacje – do czego która
 

@@ -191,7 +191,8 @@ class MGKlip:
             "od_s": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 36000.0, "step": 0.5}),
             "do_s": ("FLOAT", {"default": 10.0, "min": 0.0, "max": 36000.0, "step": 0.5,
                                "tooltip": "0 = do końca utworu"}),
-            "fps": ("INT", {"default": 25, "min": 1, "max": 60}),
+            "fps": ("FLOAT", {"default": 25.0, "min": 1.0, "max": 60.0, "step": 0.5,
+                              "tooltip": "np. 12.5 + RIFE ×2 w ComfyUI = 25 fps w połowie czasu renderu"}),
             "rozmiar": (["1280x720", "1920x1080", "3840x2160"],),
             "seed": ("INT", {"default": 20261122, "min": 0, "max": 2**31 - 1}),
             "podpis": ("STRING", {"default": "", "multiline": True}),
@@ -206,7 +207,7 @@ class MGKlip:
     def renderuj(self, wav, preset, od_s, do_s, fps, rozmiar, seed, podpis):
         wav = _sciezka_wav(wav)
         argumenty = [str(ROOT / "skrypty" / "animacja.py"), "--wav", wav, "--preset", preset, "--od", str(od_s),
-                     "--do", str(do_s), "--fps", str(fps), "--seed", str(seed), "--podpis", podpis]
+                     "--do", str(do_s), "--fps", f"{fps:g}", "--seed", str(seed), "--podpis", podpis]
         if rozmiar != "1920x1080":
             argumenty += ["--rozmiar", rozmiar]
         pasek = None
@@ -243,6 +244,39 @@ class MGKlip:
         return {"ui": {"text": [mp4]}, "result": (mp4, kontrola, podglad)}
 
 
-NODE_CLASS_MAPPINGS = {"MGKlatki": MGKlatki, "MGKlip": MGKlip}
+class MGKontrola:
+    """Kontrola jakości gotowego MP4 jak w potoku – np. po interpolacji RIFE / powiększeniu i zapisie przez
+    VideoHelperSuite (wejście `pliki` z „Video Combine”) albo dla ścieżki MP4 podanej tekstem."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {}, "optional": {
+            "pliki": ("VHS_FILENAMES",),
+            "mp4": ("STRING", {"default": "", "forceInput": True}),
+        }}
+
+    RETURN_TYPES = ("STRING", "BOOLEAN")
+    RETURN_NAMES = ("kontrola", "ok")
+    FUNCTION = "sprawdz"
+    CATEGORY = KATEGORIA
+    OUTPUT_NODE = True
+
+    def sprawdz(self, pliki=None, mp4=""):
+        if pliki and not mp4:
+            mp4 = next((f for f in reversed(pliki[1]) if str(f).lower().endswith(".mp4")), "")
+        if pliki is not None and not mp4:
+            # praca partiami (VHS Batch Manager): plik powstaje dopiero po ostatniej partii
+            return {"ui": {"text": ["czekam na ostatnią partię…"]}, "result": ("", False)}
+        if not mp4 or not Path(mp4).exists():
+            raise RuntimeError("brak pliku MP4 do kontroli")
+        _uruchom([str(ROOT / "skrypty" / "kontrola.py"), str(mp4)])
+        raport = json.loads(Path(mp4).with_suffix(".qc.json").read_text(encoding="utf-8"))["kontrola"]
+        tekst = json.dumps(raport, ensure_ascii=False, indent=2)
+        werdykt = ("OK" if raport["ok"] else "UWAGA: kontrola nie przeszła") + f" – {Path(mp4).name}"
+        return {"ui": {"text": [werdykt + "\n" + tekst]}, "result": (tekst, bool(raport["ok"]))}
+
+
+NODE_CLASS_MAPPINGS = {"MGKlatki": MGKlatki, "MGKlip": MGKlip, "MGKontrola": MGKontrola}
 NODE_DISPLAY_NAME_MAPPINGS = {"MGKlatki": "Muzyka Graficznie – klatki z dźwięku",
-                              "MGKlip": "Muzyka Graficznie – klip MP4 (potok + kontrola)"}
+                              "MGKlip": "Muzyka Graficznie – klip MP4 (potok + kontrola)",
+                              "MGKontrola": "Muzyka Graficznie – kontrola jakości MP4"}

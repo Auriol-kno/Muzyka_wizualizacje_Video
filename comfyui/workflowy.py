@@ -94,6 +94,67 @@ def wizualizacja_klip(wav=WAV_NOKTURN, preset="3_gory_ze_strun", od=0.0, do=10.0
     }
 
 
+def _wczytaj_wideo(zrodlo, meta_batch=None):
+    """VHS_LoadVideoPath bez zmiany fps i rozmiaru (format „None”); zrodlo: ścieżka albo [węzeł, wyjście]."""
+    w = {"video": zrodlo, "force_rate": 0, "custom_width": 0, "custom_height": 0, "frame_load_cap": 0,
+         "skip_first_frames": 0, "select_every_nth": 1, "format": "None"}
+    if meta_batch:
+        w["meta_batch"] = meta_batch
+    return {"class_type": "VHS_LoadVideoPath", "inputs": w}
+
+
+def _zapisz_wideo(obrazy, audio, fps, prefiks, meta_batch=None):
+    """VHS_VideoCombine → H.264 (crf 18, yuv420p) + dźwięk z wczytanego klipu (już −15 LUFS)."""
+    w = {"images": obrazy, "audio": audio, "frame_rate": float(fps), "loop_count": 0, "filename_prefix": prefiks,
+         "format": "video/h264-mp4", "pix_fmt": "yuv420p", "crf": 18, "save_metadata": False,
+         "trim_to_audio": False, "pingpong": False, "save_output": True}
+    if meta_batch:
+        w["meta_batch"] = meta_batch
+    return {"class_type": "VHS_VideoCombine", "inputs": w}
+
+
+def wizualizacja_plynna(wav=WAV_NOKTURN, preset="3_gory_ze_strun", od=205.0, do=215.0, fps=25,
+                        rozmiar="1280x720", seed=20261122, podpis=PODPIS_NOKTURN, rife="rife49.pth"):
+    """Render w połowie klatek (fps/2) + interpolacja RIFE ×2 → fps: ~2× krótszy render.
+    RIFE liczy całą partię w pamięci – do krótkich klipów (do ~30 s przy 720p); RIFE w float32
+    (GTX 1060 liczy fp16 bardzo wolno). Ruch między klatkami zgaduje RIFE, więc ostre ataki mogą się
+    lekko rozmyć – porównaj z renderem w pełnym fps."""
+    return {
+        "1": {"class_type": "MGKlip", "inputs": {"wav": wav, "preset": preset, "od_s": float(od), "do_s": float(do),
+                                                  "fps": fps / 2, "rozmiar": rozmiar, "seed": seed, "podpis": podpis}},
+        "2": _wczytaj_wideo(["1", 0]),
+        "3": {"class_type": "RIFE VFI", "inputs": {"frames": ["2", 0], "ckpt_name": rife, "multiplier": 2,
+                                                    "clear_cache_after_n_frames": 10, "fast_mode": True,
+                                                    "ensemble": True, "scale_factor": 1.0, "dtype": "float32",
+                                                    "torch_compile": False, "batch_size": 1}},
+        "4": _zapisz_wideo(["3", 0], ["2", 2], fps, "muzyka_graficznie/plynna"),
+        "5": {"class_type": "MGKontrola", "inputs": {"pliki": ["4", 0]}},
+    }
+
+
+def wizualizacja_ostrzejsza(wav=WAV_NOKTURN, preset="3_gory_ze_strun", od=205.0, do=215.0, fps=25,
+                            seed=20261122, podpis=PODPIS_NOKTURN, model="RealESRGAN_x2plus.pth",
+                            partia=32, mp4=None):
+    """Klip 720p → Real-ESRGAN ×2 → 1920×1080 (lanczos). Partiami po `partia` klatek, więc działa też
+    dla całego utworu. mp4: gotowy plik zamiast renderu MGKlip (pełna ścieżka)."""
+    wf = {}
+    if mp4 is None:
+        wf["1"] = {"class_type": "MGKlip", "inputs": {"wav": wav, "preset": preset, "od_s": float(od),
+                                                       "do_s": float(do), "fps": fps, "rozmiar": "1280x720",
+                                                       "seed": seed, "podpis": podpis}}
+    wf.update({
+        "2": {"class_type": "VHS_BatchManager", "inputs": {"frames_per_batch": partia}},
+        "3": _wczytaj_wideo(mp4 or ["1", 0], ["2", 0]),
+        "4": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": model}},
+        "5": {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": ["4", 0], "image": ["3", 0]}},
+        "6": {"class_type": "ImageScale", "inputs": {"image": ["5", 0], "upscale_method": "lanczos", "width": 1920,
+                                                     "height": 1080, "crop": "disabled"}},
+        "7": _zapisz_wideo(["6", 0], ["3", 2], fps, "muzyka_graficznie/ostrzejsza", ["2", 0]),
+        "8": {"class_type": "MGKontrola", "inputs": {"pliki": ["7", 0]}},
+    })
+    return wf
+
+
 def zapisz_pliki(katalog=None):
     """Zapisuje workflowy jako JSON (format API) do comfyui/workflows/ – do otwarcia w interfejsie
     ComfyUI (Workflow → Open albo przeciągnięcie pliku na okno) i ręcznej pracy na tych samych ustawieniach."""
@@ -110,6 +171,8 @@ def zapisz_pliki(katalog=None):
         "wizualizacja_stylizowana": wizualizacja_stylizowana(
             "luminous golden threads over misty night mountains, deep navy blue, delicate light, fine detail"),
         "wizualizacja_klip": wizualizacja_klip(),
+        "wizualizacja_plynna": wizualizacja_plynna(),
+        "wizualizacja_ostrzejsza": wizualizacja_ostrzejsza(),
     }
     for nazwa, wf in przyklady.items():
         (katalog / f"{nazwa}.json").write_text(json.dumps(wf, indent=2, ensure_ascii=False), encoding="utf-8")

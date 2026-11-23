@@ -73,6 +73,9 @@ def uruchom(cfg, c, czekaj_s=240):
     argumenty = [str(folder / "python_embeded" / "python.exe"), "-s", str(folder / "ComfyUI" / "main.py"),
                  "--windows-standalone-build", "--listen", "127.0.0.1", "--port", str(u.port or 8188),
                  "--disable-auto-launch"]
+    # menedżer dodatków wbudowany w ComfyUI ≥ 0.4x (pakiet comfyui_manager z manager_requirements.txt)
+    if (folder / "ComfyUI" / "manager_requirements.txt").exists():
+        argumenty.append("--enable-manager")
     print("Uruchamiam:", " ".join(argumenty))
     # serwer ma przeżyć okno/terminal, z którego go uruchomiono (odłączony, poza zadaniem nadrzędnym)
     flagi = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
