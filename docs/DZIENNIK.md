@@ -8,6 +8,10 @@
   strumienia źródła. SDXL img2img przetestowany i odrzucony (gubi ziarno, migotanie). Kontrola OK, klip na
   Dysku Google. Szczegóły: `docs/piasek_fraktalny.md`.
 - Panel „przepływ pracy”: poprawka (zmienna `h` przesłaniała JSX).
+- Wersja 2 po uwagach właściciela: piasek 3D z ~4,4 mln ziaren (`wizualizacje/piasek3d.py`) – wysokie tony
+  wypiętrzają pomarańczowe szczyty, bas zapada niebieskie leje, każdy półton ma swoje miejsce na piasku,
+  ziarna mienią się; kamera nisko z powolnym najazdem. Kontrola OK, ruch 2–7× większy; na Dysku wersja
+  11 Mb/s (limit połączenia ~7,5 MB), wzorzec CRF 18 lokalnie.
 
 ## 2026-11-23 · Claude (10)
 - Dodatki ComfyUI (prośba właściciela, pakiet 1): Manager (wbudowany, `--enable-manager` w `uruchom.py`),

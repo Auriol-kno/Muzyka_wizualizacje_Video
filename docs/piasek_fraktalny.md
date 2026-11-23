@@ -64,3 +64,28 @@ dźwięk).
   średniej jasności 2,85/255 (płynne narastanie przy ataku basu), −15,1 LUFS, −1,4 dBTP.
 - Obejrzane: początek (spokój), środek (szczyt basu – pomarańcz), koniec (wysokie – błękit), kolejne
   klatki wokół ataku 1,56 s i pierścień po ataku 2,21 s. Render jednym przebiegiem – bez łączeń segmentów.
+
+## Wersja 2 – piasek 3D (uwagi właściciela, 2026-11-23)
+Uwagi: większa, widoczna amplituda; wysokie tony = najwyższa dodatnia amplituda, basy = ujemna; kolory
+odwrotnie (niskie → niebieski, wysokie → pomarańcz); gra światła, mienienie się ziaren; „nic się nie
+rusza” – animacja ma być głęboka i dynamiczna, każdy dźwięk widoczny na cząsteczkach.
+
+`wizualizacje/piasek3d.py` (domyślne w `skrypty/piasek.py`, `--wersja 3d`): ~4,4 mln ziaren na siatce
+14 × 13 j. (gęściej przy kamerze), bufor głębokości (bliższe ziarna zasłaniają dalsze), głębia ostrości.
+Kamera nisko nad piaskiem (2,55 j.), powolny najazd 5,6 → 4,8 j. i obrót −7° → +5° (łagodny start/stop).
+
+| Dźwięk | Obraz |
+|---|---|
+| wysokie 2–8 kHz | wzgórza i szczyty rosną w górę (do ~0,75 j.); barwa **pomarańczowa** (wg dodatniej wysokości) |
+| niskie / bas | doliny i leje wirów zapadają się (do ~−0,9 j.); barwa **niebieska** (wg ujemnej wysokości) |
+| każdy półton C2–B6 (widmo) | własne miejsce na piasku (wysokość dźwięku → w poprzek, krąg kwintowy → w głąb); powyżej E4 wybrzuszenie w górę, poniżej w dół, z koncentryczną zmarszczką; obwiednia atak 30 ms / zanik 0,45 s |
+| średnie | obrót i wysokość spiralnych grzbietów 5 wirów |
+| ataki | pierścień-fala (do 0,22 j.) od jednego z trzech wirów |
+| mienienie | każde ziarno ma mikrościankę obracaną z prędkością 0,4–2 rad/s × (0,6 + 2,2·wysokie + 1,2·energia); błysk ∝ (n·h)^60 |
+
+Wynik: `wyniki/klipy/2026-11-23_11-33_piasek_fraktalny_3d_1280x720_25fps.mp4` (wzorzec CRF 18, 10,1 MB,
+render 290 s). Kontrola OK: 125 klatek, 5,000 s / audio 4,992 s (MD5 strumienia = źródło), brak czarnych
+klatek i zatrzymań, faststart, największy skok jasności 1,01. Ruch: średnia różnica sąsiednich klatek 7,3
+(wersja 1: 1–3,6); mienienie: ~8% pikseli na klatkę zmienia jasność o > 25/255.
+Na Dysk Google (limit połączenia ~7,5 MB) poszła wersja dwuprzebiegowa 11 Mb/s z tych samych klatek
+(6,8 MB, SSIM 0,972 względem wzorca), audio identyczne.

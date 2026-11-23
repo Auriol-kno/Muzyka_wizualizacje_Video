@@ -25,11 +25,12 @@ import animacja  # noqa: E402  (ścieżki, ffmpeg, kontrola)
 _S = {}
 
 
-def _init(wav, n, seed):
+def _init(wav, n, seed, modul):
     import cv2
     cv2.setNumThreads(1)
     from wizualizacje.analiza import analizuj
-    from wizualizacje import piasek as P
+    import importlib
+    P = importlib.import_module(f"wizualizacje.{modul}")
     an = analizuj(wav)
     _S.update(P=P, p=P.parametry(an, n), sw=P.Swiat(seed))
 
@@ -52,13 +53,16 @@ def main():
     ap.add_argument("--procesy", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     ap.add_argument("--seed", type=int, default=20261123)
     ap.add_argument("--crf", type=int, default=18)
+    ap.add_argument("--wersja", choices=["3d", "2d"], default="3d", help="3d: ziarna w przestrzeni (domyślnie)")
     ap.add_argument("--od-klatki", type=int, default=0, help="tylko test: zakres klatek")
     ap.add_argument("--do-klatki", type=int, default=0)
     a = ap.parse_args()
-    from wizualizacje import piasek as P
+    import importlib
+    modul = "piasek3d" if a.wersja == "3d" else "piasek"
+    P = importlib.import_module(f"wizualizacje.{modul}")
     zr = Path(a.zrodlo)
     wyniki, robocze = animacja.sciezki()
-    nazwa = f"piasek_fraktalny_{zr.stem[:50]}"
+    nazwa = f"piasek_fraktalny{'_3d' if a.wersja == '3d' else ''}_{zr.stem[:50]}"
     rob = robocze / "piasek" / nazwa; kl = rob / "klatki"; kl.mkdir(parents=True, exist_ok=True)
     wav = rob / "audio.wav"
     if not wav.exists():   # tylko do analizy; do klipu idzie oryginalny strumień
@@ -74,7 +78,7 @@ def main():
     t0 = time.time()
     if brak:
         with mp.get_context("spawn").Pool(min(a.procesy, len(brak)), initializer=_init,
-                                          initargs=(str(wav), n, a.seed)) as pool:
+                                          initargs=(str(wav), n, a.seed, modul)) as pool:
             for j, _ in enumerate(pool.imap_unordered(_klatka, brak), 1):
                 if j % 10 == 0 or j == len(brak):
                     el = time.time() - t0
@@ -92,7 +96,7 @@ def main():
     if p.returncode:
         sys.exit(p.stderr[-2000:])
     qc = animacja.kontrola(out, n / P.FPS, P.FPS)
-    raport = dict(plik=str(out), zrodlo=str(zr), seed=a.seed, klatki=n, fps=P.FPS, rozmiar=f"{P.W}x{P.H}",
+    raport = dict(plik=str(out), zrodlo=str(zr), seed=a.seed, klatki=n, fps=P.FPS, rozmiar=f"{getattr(P, 'W_OUT', P.W)}x{getattr(P, 'H_OUT', P.H)}", wersja=a.wersja,
                   audio="kopia strumienia źródła" if kopia_audio else "AAC 256k", kontrola=qc,
                   czas_renderu_min=round((time.time() - t0) / 60, 1))
     with open(out.with_suffix(".qc.json"), "w", encoding="utf-8") as f:
