@@ -9,6 +9,12 @@
   5 s klipu w 185 s zamiast 290 s; kontrola OK: 4,92/4,91 s, skok 0,54, −15,1 LUFS, −1,4 dBTP) i
   `wizualizacja_ostrzejsza` (720p → Real-ESRGAN ×2 → 1080p partiami po 32 klatki, ~3 s/klatkę; kontrola OK:
   5,0/4,99 s, skok 0,51, −15,1 LUFS, −1,4 dBTP).
+- `python -m comfyui.zadanie`: workflow → kolejka → czekanie → podsumowanie z kontrolą; kopia klipu do
+  `<wyniki>/klipy/RRRR-MM-DD_GG-MM_<nazwa>.mp4` (+ opcjonalnie folder Dysku Google). Klipy wysyłane też na
+  Dysk Google właściciela (folder TEMP). Test: płynna 10 s (205–215 s) w 343 s, kontrola OK (9,96/9,94 s,
+  skok 0,55, −15,0 LUFS, −1,3 dBTP).
+- Panel „przepływ pracy” (mod Claude, `comfyui/panel/`) + endpoint `GET /mg/stan` w węzłach: bloki
+  workflow na żywo (czeka / liczy z postępem / gotowe / błąd), VRAM, kolejka, historia.
 
 ## 2026-11-23 · Claude (9)
 - ComfyUI generuje nasze wizualizacje (prośba właściciela): węzły „Muzyka Graficznie” (`comfyui/wezly/`,

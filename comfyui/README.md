@@ -98,6 +98,24 @@ python -m comfyui.workflowy        # zapisz workflowy do comfyui/workflows/*.jso
 
 Interfejs: http://127.0.0.1:8188 w przeglądarce. Dziennik serwera: `<robocze>/comfyui/serwer.log`.
 
+## Zadania jednym poleceniem i kopie klipów
+
+```powershell
+python -m comfyui.zadanie plynna --od 205 --do 215     # podglad | klip | plynna | ostrzejsza
+python -m comfyui.zadanie ostrzejsza --mp4 "D:/.../klip.mp4"
+```
+Czeka na koniec (z partiami VHS), wypisuje tylko krótkie podsumowanie z kontrolą jakości. Gotowy klip
+trafia też do `<wyniki>/klipy/RRRR-MM-DD_GG-MM_<nazwa>.mp4` (data i godzina utworzenia na komputerze).
+Jeśli w `config/sciezki.toml` → `[udzial]` jest `dysk_google = "<folder synchronizowany Dyskiem Google>"`,
+kopia idzie także tam (Dysk Google na komputer wysyła ją sam).
+
+## Panel „przepływ pracy” w aplikacji Claude (`comfyui/panel/`)
+
+Mod Claude Code: panel obok rozmowy z blokami bieżącego workflow (○ czeka, ▶ liczy + pasek postępu,
+✓ gotowe, ✗ błąd), VRAM, kolejką i historią zadań. Dane z `GET /mg/stan` – endpointu dodanego przez
+węzły „Muzyka Graficznie” (zapis zdarzeń wykonania ComfyUI). Komenda `/przeplyw` otwiera panel.
+Instalacja na stałe: folder `comfyui/panel` jako plugin (`claude --plugin-dir comfyui/panel`).
+
 ## Z Pythona
 
 ```python

@@ -1,0 +1,1 @@
+{ "name": "muzyka-panel", "version": "0.1.0", "description": "Muzyka Graficznie: przepływ pracy ComfyUI w blokach, na żywo", "types": "./types/index.d.ts" }

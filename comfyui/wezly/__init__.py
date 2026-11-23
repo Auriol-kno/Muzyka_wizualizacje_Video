@@ -170,9 +170,22 @@ class MGKlatki:
         wyj = _robocze() / "klatki" / klucz
         if wyj.exists():
             shutil.rmtree(wyj)
+        n = len([x for x in czasy_s.replace(";", ",").split(",") if x.strip()])
+        postep = None
+        try:
+            import comfy.utils
+            pb = comfy.utils.ProgressBar(n)
+            licz = {"k": 0}
+
+            def postep(linia):
+                if linia.lower().endswith(".png"):
+                    licz["k"] += 1
+                    pb.update_absolute(licz["k"], n)
+        except ImportError:
+            pass
         linie = _uruchom([str(ROOT / "skrypty" / "klatki.py"), "--wav", wav, "--preset", preset, "--czasy", czasy_s,
                           "--rozmiar", f"{szerokosc}x{wysokosc}", "--seed", str(seed), "--podpis", podpis,
-                          "--wyj", str(wyj)])
+                          "--wyj", str(wyj)], postep)
         pliki = [l for l in linie if l.lower().endswith(".png") and Path(l).exists()]
         if not pliki:
             raise RuntimeError("renderer nie zwrócił klatek")
@@ -280,3 +293,120 @@ NODE_CLASS_MAPPINGS = {"MGKlatki": MGKlatki, "MGKlip": MGKlip, "MGKontrola": MGK
 NODE_DISPLAY_NAME_MAPPINGS = {"MGKlatki": "Muzyka Graficznie – klatki z dźwięku",
                               "MGKlip": "Muzyka Graficznie – klip MP4 (potok + kontrola)",
                               "MGKontrola": "Muzyka Graficznie – kontrola jakości MP4"}
+
+
+# ----------------------------------------------------------------------------- stan na żywo (panel)
+# Zapisujemy zdarzenia wykonania (który blok liczy, postęp, błędy) i wystawiamy je pod GET /mg/stan,
+# żeby panel „przepływ pracy” (mod Claude, comfyui/panel/) mógł rysować bloki bez websocketu.
+import threading
+import time as _time
+
+_STAN_LOCK = threading.Lock()
+_STAN = {"biezace": None, "historia": []}
+
+
+def _notuj(zdarzenie, dane):
+    if not isinstance(dane, dict):
+        return
+    teraz = _time.time()
+    with _STAN_LOCK:
+        b = _STAN["biezace"]
+        pid = dane.get("prompt_id")
+        if zdarzenie == "execution_start":
+            _STAN["biezace"] = {"prompt_id": pid, "start": teraz, "wezly": {}, "blad": None}
+            return
+        if b is None or (pid and pid != b["prompt_id"]):
+            return
+        w = b["wezly"]
+        if zdarzenie == "execution_cached":
+            for n in dane.get("nodes", []):
+                w[str(n)] = {"stan": "z pamięci"}
+        elif zdarzenie == "executing":
+            for v in w.values():
+                if v.get("stan") == "liczy":
+                    v["stan"] = "gotowe"; v["koniec"] = teraz
+            n = dane.get("node")
+            if n is not None:
+                w[str(n)] = {"stan": "liczy", "start": teraz}
+        elif zdarzenie == "progress":
+            n = str(dane.get("node"))
+            w.setdefault(n, {"stan": "liczy", "start": teraz}).update(value=dane.get("value"), max=dane.get("max"))
+        elif zdarzenie == "executed":
+            n = str(dane.get("node"))
+            w.setdefault(n, {})["stan"] = "gotowe"
+            tekst = (dane.get("output") or {}).get("text")
+            if tekst:
+                w[n]["wynik"] = str(tekst[0])[:300]
+        elif zdarzenie in ("execution_success", "execution_error", "execution_interrupted"):
+            for v in w.values():
+                if v.get("stan") == "liczy":
+                    v["stan"] = "błąd" if zdarzenie == "execution_error" else "gotowe"
+            if zdarzenie == "execution_error":
+                b["blad"] = f"{dane.get('node_type')}: {str(dane.get('exception_message', '')).strip()[:300]}"
+            b["koniec"] = teraz
+            b["wynik"] = {"execution_success": "ok", "execution_error": "błąd",
+                          "execution_interrupted": "przerwane"}[zdarzenie]
+            _STAN["historia"] = ([{k: b.get(k) for k in ("prompt_id", "start", "koniec", "wynik", "blad")}
+                                  | {"wezly": b.get("typy", {})}] + _STAN["historia"])[:10]
+            _STAN["ostatnie"] = b
+            _STAN["biezace"] = None
+
+
+def _podepnij_serwer():
+    try:
+        from aiohttp import web
+        from server import PromptServer
+    except ImportError:
+        return
+    srv = getattr(PromptServer, "instance", None)
+    if srv is None or getattr(srv, "_mg_podpiety", False):
+        return
+    oryginal = srv.send_sync
+
+    def send_sync(event, data, sid=None):
+        try:
+            _notuj(event, data)
+        except Exception:  # noqa: BLE001 – panel nie może psuć wykonania
+            pass
+        return oryginal(event, data, sid)
+
+    srv.send_sync = send_sync
+    srv._mg_podpiety = True
+
+    def _bloki(prompt, wezly):
+        bloki = []
+        for nid, n in sorted(prompt.items(), key=lambda kv: int(kv[0]) if str(kv[0]).isdigit() else 0):
+            wej = [str(v[0]) for v in n.get("inputs", {}).values() if isinstance(v, list) and len(v) == 2]
+            s = wezly.get(str(nid), {})
+            bloki.append({"id": str(nid), "typ": n.get("class_type"),
+                          "tytul": (n.get("_meta") or {}).get("title") or NODE_DISPLAY_NAME_MAPPINGS.get(n.get("class_type")) or n.get("class_type"),
+                          "wejscia": wej, "stan": s.get("stan", "czeka"), "value": s.get("value"), "max": s.get("max"),
+                          "start": s.get("start"), "koniec": s.get("koniec"), "wynik": s.get("wynik")})
+        return bloki
+
+    @srv.routes.get("/mg/stan")
+    async def mg_stan(_req):
+        biegnace, czekajace = srv.prompt_queue.get_current_queue()
+        with _STAN_LOCK:
+            b = _STAN["biezace"]
+            wynik = {"teraz": _time.time(), "w_kolejce": len(czekajace), "historia": list(_STAN["historia"]),
+                     "biezace": None, "ostatnie": None}
+            if b and biegnace:
+                prompt = biegnace[0][2]
+                wynik["biezace"] = {"prompt_id": b["prompt_id"], "start": b["start"], "bloki": _bloki(prompt, b["wezly"])}
+                b["typy"] = [n.get("class_type") for n in prompt.values()]
+            o = _STAN.get("ostatnie")
+        if o:
+            prompt = None
+            try:
+                h = srv.prompt_queue.get_history(prompt_id=o["prompt_id"])
+                prompt = h[o["prompt_id"]]["prompt"][2]
+            except Exception:  # noqa: BLE001
+                pass
+            if prompt:
+                wynik["ostatnie"] = {k: o.get(k) for k in ("prompt_id", "start", "koniec", "wynik", "blad")} | {
+                    "bloki": _bloki(prompt, o["wezly"])}
+        return web.json_response(wynik)
+
+
+_podepnij_serwer()
