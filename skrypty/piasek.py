@@ -78,7 +78,7 @@ def main():
     t0 = time.time()
     if brak:
         with mp.get_context("spawn").Pool(min(a.procesy, len(brak)), initializer=_init,
-                                          initargs=(str(wav), n, a.seed, modul)) as pool:
+                                          initargs=(str(wav), n, a.seed, modul), maxtasksperchild=250) as pool:
             for j, _ in enumerate(pool.imap_unordered(_klatka, brak), 1):
                 if j % 10 == 0 or j == len(brak):
                     el = time.time() - t0

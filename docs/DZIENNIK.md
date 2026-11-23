@@ -124,3 +124,4 @@
 
 ## 2026-11-11 · Claude
 - Chopin: cały Walc a-moll B.150 z powtórzeniami (transkrypcja z nut), styl neonowy, koło kwintowe.
+- 2026-11-23, Claude: piasek fraktalny 3D – długa wersja na cały Nokturn (253 s, 6328 klatek), kontrola OK; render wznawiany, pula procesów wymienia procesy co 250 klatek (odporność na długie rendery).

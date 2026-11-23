@@ -97,3 +97,19 @@ wersja 11 Mb/s (6,8 MB). Kontrola OK (125 klatek, 5,000 s, audio = źródło, sk
 zatrzymań). Render wznowiony po przerwaniu (6 procesów × ~2,5 GB RAM przekroczyło pamięć) – klatki 0–95
 i 96–124 z dwóch przebiegów, łączenie niewidoczne (różnica sąsiednich klatek 11,6 → 12,2, zgodnie z
 narastaniem przed atakiem 3,95 s). Domyślnie 4 procesy.
+
+## Wersja długa – cały Nokturn (prośba właściciela)
+Ten sam renderer (wersja 3, amplituda ×1,2), źródło dźwięku: nasz klip „Góry ze strun” (cały Nokturn,
+nagranie M. Goldstein, CC BY-SA 2.0, −15,2 LUFS) – strumień AAC skopiowany bez zmian.
+`python -m comfyui.zadanie piasek --zrodlo <góry ze strun>.mp4 --nazwa nokturn_piasek_fraktalny_3d_1280x720_25fps`
+
+- Wynik: `wyniki/klipy/2026-11-23_17-54_nokturn_piasek_fraktalny_3d_1280x720_25fps.mp4` (549 MB, CRF 18)
+  + `.qc.json`. Na Dysku Google (limit połączenia ~7,5 MB) tylko fragment 200–212 s (2 przebiegi 4,3 Mb/s).
+- Render 6328 klatek: 4 h 15 min + 1 h 6 min (≈3 s/klatkę, 4 procesy). Pierwszy przebieg przerwał się na
+  klatce 5038 (`PermissionError` przy uruchamianiu procesów potomnych – prawdopodobnie narastanie pamięci);
+  od tej pory pula wymienia procesy co 250 klatek (`maxtasksperchild=250`).
+- Kontrola OK: H.264 High yuv420p 1280×720, 25/1 fps, 6328 klatek, 253,12 s = audio 253,12 s, MD5
+  strumienia audio identyczny ze źródłem, moov przed mdat, brak czarnych klatek, freezedetect (2 s) – brak
+  zatrzymań, największy skok jasności 1,4, −15,2 LUFS / −1,4 dBTP.
+- Łączenie przebiegów (klatka 5037 → 5038): różnica sąsiednich klatek 9,4 przy 8,0–9,6 w otoczeniu –
+  niewidoczne. Obejrzane klatki 0, 1500, 3164, 5037, 5038, 6327.
