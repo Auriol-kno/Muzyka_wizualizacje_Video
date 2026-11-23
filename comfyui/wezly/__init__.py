@@ -469,5 +469,10 @@ def _podepnij_serwer():
                     "bloki": _bloki(prompt, o["wezly"])}
         return web.json_response(wynik)
 
+    @srv.routes.get("/mg/panel")
+    async def mg_panel(_req):
+        """Panel „przepływ pracy” w przeglądarce: http://127.0.0.1:8188/mg/panel"""
+        return web.FileResponse(Path(__file__).with_name("panel.html"), headers={"Cache-Control": "no-store"})
+
 
 _podepnij_serwer()

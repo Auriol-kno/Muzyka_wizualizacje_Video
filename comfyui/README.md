@@ -109,6 +109,13 @@ trafia też do `<wyniki>/klipy/RRRR-MM-DD_GG-MM_<nazwa>.mp4` (data i godzina utw
 Jeśli w `config/sciezki.toml` → `[udzial]` jest `dysk_google = "<folder synchronizowany Dyskiem Google>"`,
 kopia idzie także tam (Dysk Google na komputer wysyła ją sam).
 
+## Panel „przepływ pracy” w przeglądarce
+
+**http://127.0.0.1:8188/mg/panel** – strona wystawiana przez węzły „Muzyka Graficznie”
+(`comfyui/wezly/panel.html`): bloki bieżącego workflow (○ czeka, ▶ liczy z paskiem postępu i czasem do
+końca, ✓ gotowe, ✗ błąd), karta, VRAM, RAM, kolejka i historia; odświeżanie co 1,5 s. Działa w każdej
+przeglądarce i w panelu przeglądarki aplikacji Claude.
+
 ## Panel „przepływ pracy” w aplikacji Claude (`comfyui/panel/`)
 
 Mod Claude Code: panel obok rozmowy z blokami bieżącego workflow (○ czeka, ▶ liczy + pasek postępu,
