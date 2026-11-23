@@ -1,5 +1,12 @@
 # Dziennik projektu
 
+## 2026-11-23 · Claude (8)
+- ComfyUI do pracy lokalnej (prośba właściciela): `python -m comfyui.uruchom` sprawdza/uruchamia serwer
+  portable w tle (tylko 127.0.0.1:8188, folder z `comfyui_folder` w `config/sciezki.toml`, dziennik w
+  `<robocze>/comfyui/serwer.log`), `--stan`, `--stop`. Portable widzi modele Comfy Desktop przez
+  `extra_model_paths.yaml` (wzór w repo; bez BOM – inaczej 0.3.9 nie startuje). Workflowy jako JSON w
+  `comfyui/workflows/` do otwarcia w interfejsie. Test: tło SDXL 1344×768 wygenerowane przez klienta (184 s
+  z ładowaniem modelu). Desktop (8189) zostaje do ręcznej pracy; obie instalacje dzielą kartę 6 GB.
 ## 2026-11-22 · Claude (7)
 - Właściciel wybrał koncepcję 3 „Góry ze strun”: klip na tym samym nagraniu, **720p, 25 fps** (wyjątek od
   standardu 1080p30 na wyraźną prośbę właściciela), delikatny ruch kamery wokół.

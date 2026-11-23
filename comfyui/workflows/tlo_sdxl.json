@@ -1,0 +1,86 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "juggernautXL_v9Rdphoto2Lightning.safetensors"
+    }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "night sky over misty mountain ridges, deep navy blue, soft golden rim light, fine glowing threads, cinematic, minimal",
+      "clip": [
+        "1",
+        1
+      ]
+    }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "text, letters, watermark, signature, logo, people, face, hands, frame, border, lowres, blurry, jpeg artifacts, oversaturated",
+      "clip": [
+        "1",
+        1
+      ]
+    }
+  },
+  "4": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 1344,
+      "height": 768,
+      "batch_size": 1
+    }
+  },
+  "5": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "2",
+        0
+      ],
+      "negative": [
+        "3",
+        0
+      ],
+      "latent_image": [
+        "4",
+        0
+      ],
+      "seed": 20261122,
+      "steps": 6,
+      "cfg": 2.0,
+      "sampler_name": "dpmpp_sde",
+      "scheduler": "karras",
+      "denoise": 1.0
+    }
+  },
+  "6": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "5",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    }
+  },
+  "7": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "6",
+        0
+      ],
+      "filename_prefix": "muzyka_tlo"
+    }
+  }
+}

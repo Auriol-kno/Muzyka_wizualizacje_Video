@@ -44,3 +44,26 @@ def stylizacja_sdxl(obraz_wejsciowy, prompt, seed, sila=0.45, kroki=6, cfg=2.0, 
         "7": {"class_type": "VAEDecode", "inputs": {"samples": ["6", 0], "vae": ["1", 2]}},
         "8": {"class_type": "SaveImage", "inputs": {"images": ["7", 0], "filename_prefix": prefiks}},
     }
+
+
+def zapisz_pliki(katalog=None):
+    """Zapisuje workflowy jako JSON (format API) do comfyui/workflows/ – do otwarcia w interfejsie
+    ComfyUI (Workflow → Open albo przeciągnięcie pliku na okno) i ręcznej pracy na tych samych ustawieniach."""
+    import json
+    from pathlib import Path
+    katalog = Path(katalog or Path(__file__).resolve().parent / "workflows")
+    katalog.mkdir(parents=True, exist_ok=True)
+    przyklady = {
+        "tlo_sdxl": tlo_sdxl("night sky over misty mountain ridges, deep navy blue, soft golden rim light, "
+                             "fine glowing threads, cinematic, minimal", seed=20261122),
+        "stylizacja_sdxl": stylizacja_sdxl("klatka.png", "luminous golden threads on deep navy, oil painting, "
+                                           "soft glow", seed=20261122),
+    }
+    for nazwa, wf in przyklady.items():
+        (katalog / f"{nazwa}.json").write_text(json.dumps(wf, indent=2, ensure_ascii=False), encoding="utf-8")
+    return sorted(katalog.glob("*.json"))
+
+
+if __name__ == "__main__":
+    for p in zapisz_pliki():
+        print(p)
