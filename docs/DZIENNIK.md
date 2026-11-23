@@ -12,6 +12,9 @@
   wypiętrzają pomarańczowe szczyty, bas zapada niebieskie leje, każdy półton ma swoje miejsce na piasku,
   ziarna mienią się; kamera nisko z powolnym najazdem. Kontrola OK, ruch 2–7× większy; na Dysku wersja
   11 Mb/s (limit połączenia ~7,5 MB), wzorzec CRF 18 lokalnie.
+- Wersja 3: amplituda +20% (prośba właściciela). Poprawki: węzeł `MGPiasek` nie bierze już wyniku z
+  pamięci podręcznej po zmianie kodu (`IS_CHANGED`), domyślnie 4 procesy (pamięć), data w nazwie kopii =
+  chwila zapisania klipu.
 
 ## 2026-11-23 · Claude (10)
 - Dodatki ComfyUI (prośba właściciela, pakiet 1): Manager (wbudowany, `--enable-manager` w `uruchom.py`),

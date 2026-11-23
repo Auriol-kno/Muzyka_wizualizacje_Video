@@ -89,3 +89,11 @@ klatek i zatrzymań, faststart, największy skok jasności 1,01. Ruch: średnia 
 (wersja 1: 1–3,6); mienienie: ~8% pikseli na klatkę zmienia jasność o > 25/255.
 Na Dysk Google (limit połączenia ~7,5 MB) poszła wersja dwuprzebiegowa 11 Mb/s z tych samych klatek
 (6,8 MB, SSIM 0,972 względem wzorca), audio identyczne.
+
+## Wersja 3 – amplituda +20% (prośba właściciela)
+`AMPLITUDA = 1.2` w `wizualizacje/piasek3d.py` (cała wysokość piasku ×1,2). Wynik:
+`wyniki/klipy/2026-11-23_12-03_piasek_fraktalny_3d_amp120_1280x720_25fps.mp4` (CRF 18, 10,4 MB); na Dysku
+wersja 11 Mb/s (6,8 MB). Kontrola OK (125 klatek, 5,000 s, audio = źródło, skok jasności 0,96, brak
+zatrzymań). Render wznowiony po przerwaniu (6 procesów × ~2,5 GB RAM przekroczyło pamięć) – klatki 0–95
+i 96–124 z dwóch przebiegów, łączenie niewidoczne (różnica sąsiednich klatek 11,6 → 12,2, zgodnie z
+narastaniem przed atakiem 3,95 s). Domyślnie 4 procesy.

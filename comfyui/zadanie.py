@@ -47,7 +47,7 @@ def kopia_z_data(mp4, nazwa=None):
     """Kopia do <wyniki>/klipy z datą i godziną utworzenia pliku w nazwie (+ raport kontroli)."""
     mp4 = Path(mp4)
     st = mp4.stat()
-    t = datetime.fromtimestamp(getattr(st, "st_birthtime", None) or st.st_ctime)
+    t = datetime.fromtimestamp(st.st_mtime)   # chwila zapisania klipu (czas utworzenia przeżywa nadpisanie pliku)
     cel = folder_klipow() / f"{t:%Y-%m-%d_%H-%M}_{nazwa or mp4.stem}.mp4"
     shutil.copy2(mp4, cel)
     qc = mp4.with_suffix(".qc.json")

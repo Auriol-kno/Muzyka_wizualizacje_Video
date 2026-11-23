@@ -155,7 +155,7 @@ def wizualizacja_ostrzejsza(wav=WAV_NOKTURN, preset="3_gory_ze_strun", od=205.0,
     return wf
 
 
-def piasek_fraktalny(zrodlo="<pełna ścieżka MP4 lub WAV z muzyką>", seed=20261123, procesy=6):
+def piasek_fraktalny(zrodlo="<pełna ścieżka MP4 lub WAV z muzyką>", seed=20261123, procesy=4):
     """Klip „piasek fraktalny” z dźwięku pliku (MGPiasek) + podgląd 4 klatek + kontrola jakości."""
     return {
         "1": {"class_type": "MGPiasek", "inputs": {"zrodlo": zrodlo, "seed": seed, "procesy": procesy}},

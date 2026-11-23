@@ -298,7 +298,7 @@ class MGPiasek:
         return {"required": {
             "zrodlo": ("STRING", {"default": "", "tooltip": "pełna ścieżka pliku z dźwiękiem (MP4/WAV)"}),
             "seed": ("INT", {"default": 20261123, "min": 0, "max": 2**31 - 1}),
-            "procesy": ("INT", {"default": 6, "min": 1, "max": 32}),
+            "procesy": ("INT", {"default": 4, "min": 1, "max": 32, "tooltip": "wersja 3D: ~2,5 GB RAM na proces"}),
         }}
 
     RETURN_TYPES = ("STRING", "STRING", "IMAGE")
@@ -306,6 +306,13 @@ class MGPiasek:
     FUNCTION = "renderuj"
     CATEGORY = KATEGORIA
     OUTPUT_NODE = True
+
+    @classmethod
+    def IS_CHANGED(cls, zrodlo, seed, procesy):
+        """Zmiana kodu renderera = nowy wynik (ComfyUI inaczej zwróciłby klip z pamięci podręcznej)."""
+        pliki = [ROOT / "wizualizacje" / "piasek3d.py", ROOT / "wizualizacje" / "piasek.py",
+                 ROOT / "skrypty" / "piasek.py", Path(zrodlo.strip().strip('"'))]
+        return hashlib.sha1("|".join(f"{q}:{q.stat().st_mtime_ns}" for q in pliki if q.exists()).encode()).hexdigest()
 
     def renderuj(self, zrodlo, seed, procesy):
         zr = Path(zrodlo.strip().strip('"'))

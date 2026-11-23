@@ -4,7 +4,7 @@
     "inputs": {
       "zrodlo": "<pełna ścieżka MP4 lub WAV z muzyką>",
       "seed": 20261123,
-      "procesy": 6
+      "procesy": 4
     }
   },
   "2": {

@@ -22,6 +22,7 @@ from wizualizacje.czasteczki import H, W, Kamera, rgb
 
 W_OUT, H_OUT = 1280, 720
 FPS = 25
+AMPLITUDA = 1.2        # mnożnik całej wysokości piasku (właściciel: +20%)
 
 SZAMPAN, MIEDZ, ROZ = rgb("#EBCB9C"), rgb("#C07A48"), rgb("#D9A39A")
 POMARANCZ, NIEBIESKI = rgb("#FF8A2A"), rgb("#3F8CFF")
@@ -166,7 +167,7 @@ def wysokosc(sw, p, k):
             h += 0.22 * (0.4 + 0.6 * sila) * np.exp(-((rr - (0.3 + 3.2 * dt)) / 0.22) ** 2) * math.exp(-dt / 0.7)
     # drobne zmarszczki (wysokie)
     h += (0.004 + 0.012 * Hh) * np.sin(38 * (Xw * 0.8 + Yw * 0.6) + 2.5 * np.sin(1.2 * Yw) - p["fH"][k])
-    return h.astype(np.float32)
+    return (h * AMPLITUDA).astype(np.float32)
 
 
 # ----------------------------------------------------------------------------- render
