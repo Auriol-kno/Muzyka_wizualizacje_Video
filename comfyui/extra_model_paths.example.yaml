@@ -1,0 +1,18 @@
+# Wzór: pozwala serwerowi ComfyUI portable (potok, port 8188) widzieć modele pobrane w Comfy Desktop,
+# bez kopiowania plików. Skopiuj jako ComfyUI/extra_model_paths.yaml w folderze ComfyUI_windows_portable
+# i popraw base_path na folder modeli Comfy Desktop na swoim komputerze. Po zmianie zrestartuj serwer.
+comfy_desktop:
+  base_path: C:/Users/<uzytkownik>/AppData/Local/Comfy-Desktop/ComfyUI-Shared/models
+  checkpoints: checkpoints/
+  diffusion_models: |-
+    diffusion_models/
+    unet/
+  text_encoders: |-
+    text_encoders/
+    clip/
+  vae: vae/
+  loras: loras/
+  controlnet: controlnet/
+  upscale_models: upscale_models/
+  latent_upscale_models: latent_upscale_models/
+  embeddings: embeddings/

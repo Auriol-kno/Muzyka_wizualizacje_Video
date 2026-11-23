@@ -1,0 +1,25 @@
+# Media i wyniki trzymamy na udziale sieciowym, nie w repo
+*.mp4
+*.mov
+*.wav
+*.oga
+*.ogg
+*.mp3
+*.flac
+*.png
+*.jpg
+*.exr
+*.blend1
+*.blend
+!assets/**/*.png
+test/
+wyniki/
+robocze/
+__pycache__/
+*.pyc
+.venv/
+# lokalne ścieżki (każdy komputer ma własne)
+config/sciezki.toml
+# ComfyUI: modele i wyniki są duże
+comfyui/models/
+comfyui/output/
