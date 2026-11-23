@@ -1,5 +1,17 @@
 # Dziennik projektu
 
+## 2026-11-23 · Claude (9)
+- ComfyUI generuje nasze wizualizacje (prośba właściciela): węzły „Muzyka Graficznie” (`comfyui/wezly/`,
+  łącze katalogu w `custom_nodes/muzyka_graficznie`): `MGKlatki` (klatki z dźwięku → IMAGE) i `MGKlip`
+  (klip MP4 jak w potoku + kontrola jakości). Węzły wołają `skrypty/klatki.py` / `animacja.py` Pythonem
+  projektu (`[narzedzia] python`), więc obraz jest identyczny z potokiem. Workflowy: podgląd, hybryda
+  (klatka → SDXL img2img, siła 0,35), klip. Gałąź `claude/comfyui-hybryda` scalona do `claude/koncepcje-v2`.
+- Właściciel zaktualizował ComfyUI portable 0.3.9 → 0.46 (`update_comfyui_stable.bat`); nowy kod wymaga
+  nowszego PyTorch (`comfy_kitchen`). PyTorch 2.5.1+cu124 → **2.14.1+cu126** (cu128/cu130 nie wspierają
+  GTX 1060 / sm_61). Sprawdzone: `sm_61` na liście, mnożenie macierzy na karcie OK.
+- Testy przez API (0.46, nowy PyTorch): podgląd 2 klatek 26 s; hybryda 135 s; klip 5 s (205–210 s, 720p25)
+  290 s – kontrola OK (5,0/5,0 s, brak czarnych klatek, skok jasności 0,52, −15,1 LUFS, −1,5 dBTP).
+
 ## 2026-11-23 · Claude (8)
 - ComfyUI do pracy lokalnej (prośba właściciela): `python -m comfyui.uruchom` sprawdza/uruchamia serwer
   portable w tle (tylko 127.0.0.1:8188, folder z `comfyui_folder` w `config/sciezki.toml`, dziennik w

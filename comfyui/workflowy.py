@@ -46,6 +46,54 @@ def stylizacja_sdxl(obraz_wejsciowy, prompt, seed, sila=0.45, kroki=6, cfg=2.0, 
     }
 
 
+# ----------------------------------------------------------------------------- węzły „Muzyka Graficznie”
+# sama nazwa pliku: węzeł szuka jej w folderze [udzial] zrodla z config/sciezki.toml
+WAV_NOKTURN = "Frederic_Chopin_-_Nocturne_Eb_major_Opus_9,_number_2.wav"
+PODPIS_NOKTURN = "Fryderyk Chopin – Nokturn Es-dur op. 9 nr 2\\nwyk. Martha Goldstein · CC BY-SA 2.0"
+
+
+def wizualizacja_podglad(wav=WAV_NOKTURN, preset="3_gory_ze_strun", czasy="62, 211", szer=1280, wys=720,
+                         seed=20261122, podpis="", prefiks="muzyka_klatki"):
+    """Klatki wizualizacji z dźwięku (węzeł MGKlatki) → zapis/podgląd w ComfyUI."""
+    return {
+        "1": {"class_type": "MGKlatki", "inputs": {"wav": wav, "preset": preset, "czasy_s": czasy, "szerokosc": szer,
+                                                    "wysokosc": wys, "seed": seed, "podpis": podpis}},
+        "2": {"class_type": "SaveImage", "inputs": {"images": ["1", 0], "filename_prefix": prefiks}},
+    }
+
+
+def wizualizacja_stylizowana(prompt, wav=WAV_NOKTURN, preset="3_gory_ze_strun", czasy="211", sila=0.35, seed=7,
+                             kroki=6, cfg=2.0, model=MODEL_DOMYSLNY, negatyw=NEGATYW, prefiks="muzyka_hybryda"):
+    """Hybryda: klatka z renderera (kształt i ruch z dźwięku) → img2img SDXL (faktura, „malarskość”).
+    Render w kubełku SDXL 1344×768; sila 0.25–0.45 zachowuje kształt nici i gór."""
+    return {
+        "1": {"class_type": "MGKlatki", "inputs": {"wav": wav, "preset": preset, "czasy_s": czasy, "szerokosc": 1344,
+                                                    "wysokosc": 768, "seed": 20261122, "podpis": ""}},
+        "2": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": model}},
+        "3": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["2", 1]}},
+        "4": {"class_type": "CLIPTextEncode", "inputs": {"text": negatyw, "clip": ["2", 1]}},
+        "5": {"class_type": "VAEEncode", "inputs": {"pixels": ["1", 0], "vae": ["2", 2]}},
+        "6": {"class_type": "KSampler", "inputs": {"model": ["2", 0], "positive": ["3", 0], "negative": ["4", 0],
+                                                    "latent_image": ["5", 0], "seed": int(seed), "steps": kroki,
+                                                    "cfg": cfg, "sampler_name": "dpmpp_sde", "scheduler": "karras",
+                                                    "denoise": float(sila)}},
+        "7": {"class_type": "VAEDecode", "inputs": {"samples": ["6", 0], "vae": ["2", 2]}},
+        "8": {"class_type": "SaveImage", "inputs": {"images": ["7", 0], "filename_prefix": prefiks}},
+        "9": {"class_type": "PreviewImage", "inputs": {"images": ["1", 0]}},
+    }
+
+
+def wizualizacja_klip(wav=WAV_NOKTURN, preset="3_gory_ze_strun", od=0.0, do=10.0, fps=25, rozmiar="1280x720",
+                      seed=20261122, podpis=PODPIS_NOKTURN):
+    """Klip MP4 jak w potoku (węzeł MGKlip): normalizacja −15 LUFS, H.264 + AAC 48 kHz, kontrola jakości.
+    do = 0 → cały utwór (Nokturn 3_gory_ze_strun 720p25: ~4 h na GTX 1060 / 8 procesów CPU)."""
+    return {
+        "1": {"class_type": "MGKlip", "inputs": {"wav": wav, "preset": preset, "od_s": float(od), "do_s": float(do),
+                                                  "fps": fps, "rozmiar": rozmiar, "seed": seed, "podpis": podpis}},
+        "2": {"class_type": "PreviewImage", "inputs": {"images": ["1", 2]}},
+    }
+
+
 def zapisz_pliki(katalog=None):
     """Zapisuje workflowy jako JSON (format API) do comfyui/workflows/ – do otwarcia w interfejsie
     ComfyUI (Workflow → Open albo przeciągnięcie pliku na okno) i ręcznej pracy na tych samych ustawieniach."""
@@ -58,6 +106,10 @@ def zapisz_pliki(katalog=None):
                              "fine glowing threads, cinematic, minimal", seed=20261122),
         "stylizacja_sdxl": stylizacja_sdxl("klatka.png", "luminous golden threads on deep navy, oil painting, "
                                            "soft glow", seed=20261122),
+        "wizualizacja_podglad": wizualizacja_podglad(),
+        "wizualizacja_stylizowana": wizualizacja_stylizowana(
+            "luminous golden threads over misty night mountains, deep navy blue, delicate light, fine detail"),
+        "wizualizacja_klip": wizualizacja_klip(),
     }
     for nazwa, wf in przyklady.items():
         (katalog / f"{nazwa}.json").write_text(json.dumps(wf, indent=2, ensure_ascii=False), encoding="utf-8")

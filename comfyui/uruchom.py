@@ -74,9 +74,16 @@ def uruchom(cfg, c, czekaj_s=240):
                  "--windows-standalone-build", "--listen", "127.0.0.1", "--port", str(u.port or 8188),
                  "--disable-auto-launch"]
     print("Uruchamiam:", " ".join(argumenty))
-    flagi = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+    # serwer ma przeżyć okno/terminal, z którego go uruchomiono (odłączony, poza zadaniem nadrzędnym)
+    flagi = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
+             if os.name == "nt" else 0)
     with open(log, "ab") as f:
-        p = subprocess.Popen(argumenty, cwd=folder, stdout=f, stderr=subprocess.STDOUT, creationflags=flagi)
+        try:
+            p = subprocess.Popen(argumenty, cwd=folder, stdout=f, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                 creationflags=flagi | (subprocess.CREATE_BREAKAWAY_FROM_JOB if os.name == "nt" else 0))
+        except OSError:   # zadanie nadrzędne nie pozwala się odłączyć – uruchom bez tej flagi
+            p = subprocess.Popen(argumenty, cwd=folder, stdout=f, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                 creationflags=flagi)
     (folder_logu(cfg) / "serwer.pid").write_text(str(p.pid))
     t0 = time.time()
     while time.time() - t0 < czekaj_s:

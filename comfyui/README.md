@@ -1,49 +1,87 @@
 # ComfyUI – praca lokalna
 
-Cel: tła, tekstury i stylizacja klatek (SDXL), które wchodzą do renderu jako warstwy pod cząsteczkami.
+ComfyUI generuje u nas **te same wizualizacje co potok** (cząsteczki i sceny 3D sterowane dźwiękiem) przez
+węzły „Muzyka Graficznie”, a SDXL może je potem stylizować (img2img) albo dać tło.
 Wszystko działa na tym komputerze (GTX 1060 6 GB), serwer słucha tylko na `127.0.0.1`.
+
+## Węzły „Muzyka Graficznie” (`comfyui/wezly/`)
+
+| Węzeł | Wejście | Wyjście |
+|---|---|---|
+| **klatki z dźwięku** (`MGKlatki`) | WAV, preset, chwile w s (`62, 211`), rozmiar, seed, podpis | `IMAGE` – klatki do podglądu lub img2img |
+| **klip MP4** (`MGKlip`) | WAV, preset, od–do (0 = do końca), fps, rozmiar, seed, podpis | ścieżka MP4, raport kontroli (JSON), 4 klatki podglądu |
+
+- Presety: sceny 3D `1_wyspa_poziomic` … `5_membrana_bessela` (z orbitą kamery, `3_gory_ze_strun` domyślny)
+  i cząsteczkowe `1_cymatyka_zloty_piasek` … `5b_topografia_tory`.
+- WAV: pełna ścieżka albo sama nazwa pliku z folderu `[udzial] zrodla`.
+- Węzły nie liczą obrazu w Pythonie ComfyUI – wołają `skrypty/klatki.py` / `skrypty/animacja.py`
+  Pythonem projektu. Wynik jest więc identyczny z potokiem: ruch z pomiaru nagrania, te same ścieżki kamery,
+  −15 LUFS / −1,5 dBTP, H.264 + AAC 48 kHz, kontrola jakości w `.qc.json`. MP4 trafia do folderu `wyniki`.
+- `MGKlip` blokuje kolejkę ComfyUI na czas renderu (postęp na pasku węzła i w konsoli). Cały Nokturn
+  `3_gory_ze_strun` 720p25 to ~4 h – długie klipy lepiej puszczać z `skrypty/animacja.py`.
+
+Gotowe workflowy (`comfyui/workflows/`, otwórz przeciągając plik na okno ComfyUI):
+
+| Plik | Co robi | Czas na GTX 1060 |
+|---|---|---|
+| `wizualizacja_podglad.json` | klatki z 62 s i 211 s | ~25 s |
+| `wizualizacja_stylizowana.json` | klatka 211 s → SDXL img2img (siła 0,35: kształt z dźwięku zostaje) | ~2 min |
+| `wizualizacja_klip.json` | 10 s klipu 720p25 z podpisem + podgląd | ~1 min/2 s klipu |
+| `tlo_sdxl.json`, `stylizacja_sdxl.json` | samo SDXL: tło / stylizacja wgranego obrazu | ~1 min |
 
 ## Dwie instalacje – do czego która
 
 | | ComfyUI portable | Comfy Desktop |
 |---|---|---|
-| Rola | serwer potoku (skrypty, API) | ręczna praca w interfejsie |
+| Rola | serwer potoku i węzłów „Muzyka Graficznie” | ręczna praca, własne modele (LTX) |
 | Adres | `http://127.0.0.1:8188` | `http://127.0.0.1:8189` (okno aplikacji) |
-| Modele | własne `ComfyUI/models` + modele Desktop (przez `extra_model_paths.yaml`) | `Comfy-Desktop/ComfyUI-Shared/models` |
+| Modele | `ComfyUI/models` + modele Desktop (przez `extra_model_paths.yaml`) | `Comfy-Desktop/ComfyUI-Shared/models` |
 
-Obie dzielą jedną kartę 6 GB: przy dłuższym generowaniu w potoku zamknij Desktop (albo odwrotnie).
+Obie dzielą jedną kartę 6 GB: przy dłuższym generowaniu zamknij tę drugą.
 
 ## Konfiguracja (raz)
 
-1. W `config/sciezki.toml` → `[narzedzia]`:
+1. `config/sciezki.toml` → `[narzedzia]`:
    ```toml
    comfyui_url = "http://127.0.0.1:8188"
    comfyui_folder = "D:/AI/ComfyUI_windows_portable_nvidia/ComfyUI_windows_portable"
+   python = "C:/Users/<uzytkownik>/AppData/Local/Programs/Python/Python312/python.exe"   # Python projektu
    ```
-2. Modele z Comfy Desktop widoczne w portable: skopiuj `comfyui/extra_model_paths.example.yaml` jako
-   `ComfyUI/extra_model_paths.yaml` w folderze portable i popraw `base_path`.
-   Zapisz plik **bez BOM** (UTF-8) – ComfyUI 0.3.9 inaczej nie startuje.
-3. Modele SDXL w `ComfyUI/models/checkpoints` (obecnie `juggernautXL_v9Rdphoto2Lightning`).
+2. Węzły: łącze katalogu z repo do ComfyUI (zmiany w repo działają od razu po restarcie serwera):
+   ```powershell
+   New-Item -ItemType Junction -Path "<comfyui_folder>\ComfyUI\custom_nodes\muzyka_graficznie" -Target "<repo>\comfyui\wezly"
+   ```
+3. Modele z Comfy Desktop widoczne w portable: `comfyui/extra_model_paths.example.yaml` →
+   `ComfyUI/extra_model_paths.yaml` w folderze portable, popraw `base_path`. Zapisz **bez BOM** (UTF-8).
+4. Modele SDXL w `ComfyUI/models/checkpoints` (obecnie `juggernautXL_v9Rdphoto2Lightning`).
    Licencję modelu sprawdzamy przed użyciem obrazu w klipie na YouTube.
+
+### Aktualizacja ComfyUI a GTX 1060 (Pascal, sm_61)
+
+`update_comfyui*.bat` aktualizuje kod i pakiety, ale **nie PyTorch**. ComfyUI ≥ 0.4x wymaga nowszego PyTorch
+(`comfy_kitchen`). Do GTX 1060 bierzemy wersję **cu126** – kompilacje cu128/cu130 nie mają już kart Pascal:
+```powershell
+<comfyui_folder>\python_embeded\python.exe -m pip install --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+```
+Sprawdzenie: `torch.cuda.get_arch_list()` musi zawierać `sm_61`.
 
 ## Na co dzień
 
 ```powershell
-python -m comfyui.uruchom          # stan; jeśli serwer nie działa – uruchom w tle i poczekaj (~45 s)
+python -m comfyui.uruchom          # stan; jeśli serwer nie działa – uruchom w tle i poczekaj (~30 s)
 python -m comfyui.uruchom --stan   # tylko stan: wersja, karta, VRAM, checkpointy
 python -m comfyui.uruchom --stop   # zatrzymaj serwer uruchomiony tym skryptem
 python -m comfyui.workflowy        # zapisz workflowy do comfyui/workflows/*.json
 ```
 
-Dziennik serwera: `<robocze>/comfyui/serwer.log`.
-Workflowy z `comfyui/workflows/` można otworzyć w interfejsie (przeciągnij plik na okno) i dostroić ręcznie.
+Interfejs: http://127.0.0.1:8188 w przeglądarce. Dziennik serwera: `<robocze>/comfyui/serwer.log`.
 
 ## Z Pythona
 
 ```python
 from comfyui.klient import Comfy
-from comfyui.workflowy import tlo_sdxl
-Comfy().generuj(tlo_sdxl("night sky over misty mountains, navy and gold", seed=7), "robocze/comfyui/tla")
+from comfyui import workflowy as w
+c = Comfy()
+c.generuj(w.wizualizacja_podglad(czasy="30, 120"), "robocze/comfyui/klatki")
+c.generuj(w.wizualizacja_stylizowana("golden threads, oil painting", czasy="211", sila=0.3), "robocze/comfyui/hybryda")
 ```
-
-Czas na GTX 1060: ~60 s na obraz 1344×768 (6 kroków), pierwszy po starcie dłużej (ładowanie modelu).

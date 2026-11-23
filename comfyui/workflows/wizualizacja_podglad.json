@@ -1,0 +1,24 @@
+{
+  "1": {
+    "class_type": "MGKlatki",
+    "inputs": {
+      "wav": "Frederic_Chopin_-_Nocturne_Eb_major_Opus_9,_number_2.wav",
+      "preset": "3_gory_ze_strun",
+      "czasy_s": "62, 211",
+      "szerokosc": 1280,
+      "wysokosc": 720,
+      "seed": 20261122,
+      "podpis": ""
+    }
+  },
+  "2": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "1",
+        0
+      ],
+      "filename_prefix": "muzyka_klatki"
+    }
+  }
+}
