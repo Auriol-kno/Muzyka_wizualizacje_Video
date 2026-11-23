@@ -9,6 +9,9 @@
 - `animacja.py`: sceny z `koncepcje_v2` (ścieżki kamery `SCIEZKI_KAMERY`), `--fps`, `--rozmiar`
   (render 1080p, skalowanie lanczos). Test 10 s (205–215 s): kontrola OK (10,0/10,0 s, brak czarnych
   klatek, skok jasności 0,53, −15,0 LUFS, −1,5 dBTP).
+- 2026-11-23: pełny klip (6328 klatek, 2,2 s/klatkę, 3 h 53 min): kontrola OK – obraz 253,12 s / dźwięk
+  253,12 s, brak czarnych klatek, największy skok jasności 0,52, −15,2 LUFS, −1,4 dBTP, h264 1280×720
+  25 fps + AAC 48 kHz, 79 MB. Plik w `wyniki/` (`…_3_gory_ze_strun_1280x720_25fps.mp4`).
 
 ## 2026-11-22 · Claude (6)
 - Wersja 2, runda 2 (`inspiracje/2 wariacja`, prośba właściciela: dużo drobin, kamera wokół motywu, światło,
