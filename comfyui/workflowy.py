@@ -155,6 +155,14 @@ def wizualizacja_ostrzejsza(wav=WAV_NOKTURN, preset="3_gory_ze_strun", od=205.0,
     return wf
 
 
+def piasek_fraktalny(zrodlo="<pełna ścieżka MP4 lub WAV z muzyką>", seed=20261123, procesy=6):
+    """Klip „piasek fraktalny” z dźwięku pliku (MGPiasek) + podgląd 4 klatek + kontrola jakości."""
+    return {
+        "1": {"class_type": "MGPiasek", "inputs": {"zrodlo": zrodlo, "seed": seed, "procesy": procesy}},
+        "2": {"class_type": "PreviewImage", "inputs": {"images": ["1", 2]}},
+    }
+
+
 def zapisz_pliki(katalog=None):
     """Zapisuje workflowy jako JSON (format API) do comfyui/workflows/ – do otwarcia w interfejsie
     ComfyUI (Workflow → Open albo przeciągnięcie pliku na okno) i ręcznej pracy na tych samych ustawieniach."""
@@ -173,6 +181,7 @@ def zapisz_pliki(katalog=None):
         "wizualizacja_klip": wizualizacja_klip(),
         "wizualizacja_plynna": wizualizacja_plynna(),
         "wizualizacja_ostrzejsza": wizualizacja_ostrzejsza(),
+        "piasek_fraktalny": piasek_fraktalny(),
     }
     for nazwa, wf in przyklady.items():
         (katalog / f"{nazwa}.json").write_text(json.dumps(wf, indent=2, ensure_ascii=False), encoding="utf-8")

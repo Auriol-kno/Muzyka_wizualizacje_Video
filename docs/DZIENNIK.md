@@ -1,5 +1,14 @@
 # Dziennik projektu
 
+## 2026-11-23 · Claude (11)
+- Zlecenie właściciela: klip „Piasek fraktalny” (inspiracja: grafika piaskowych fal i wirów) na pełnym audio
+  `ostrzejsza_00002-audio.mp4` (4,99 s, wycinek Nokturnu – Goldstein, CC BY-SA). Proceduralny piasek
+  (`wizualizacje/piasek.py`, `skrypty/piasek.py`, węzeł ComfyUI `MGPiasek`): niskie → wydmy + pomarańcz,
+  średnie → wiry i interferencje, wysokie → zmarszczki, iskry + błękit, ataki → pierścienie. Dźwięk = kopia
+  strumienia źródła. SDXL img2img przetestowany i odrzucony (gubi ziarno, migotanie). Kontrola OK, klip na
+  Dysku Google. Szczegóły: `docs/piasek_fraktalny.md`.
+- Panel „przepływ pracy”: poprawka (zmienna `h` przesłaniała JSX).
+
 ## 2026-11-23 · Claude (10)
 - Dodatki ComfyUI (prośba właściciela, pakiet 1): Manager (wbudowany, `--enable-manager` w `uruchom.py`),
   VideoHelperSuite, Frame-Interpolation (RIFE), Crystools; modele Real-ESRGAN ×2/×4 (BSD-3; 4x-UltraSharp

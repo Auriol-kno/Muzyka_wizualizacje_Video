@@ -289,10 +289,64 @@ class MGKontrola:
         return {"ui": {"text": [werdykt + "\n" + tekst]}, "result": (tekst, bool(raport["ok"]))}
 
 
-NODE_CLASS_MAPPINGS = {"MGKlatki": MGKlatki, "MGKlip": MGKlip, "MGKontrola": MGKontrola}
+class MGPiasek:
+    """„Piasek fraktalny”: proceduralny piasek (wydmy, wiry, ziarna) sterowany pomiarem dźwięku z pliku
+    (MP4 lub audio). Dźwięk klipu = niezmieniona ścieżka źródła. Render wznawialny (klatki PNG)."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "zrodlo": ("STRING", {"default": "", "tooltip": "pełna ścieżka pliku z dźwiękiem (MP4/WAV)"}),
+            "seed": ("INT", {"default": 20261123, "min": 0, "max": 2**31 - 1}),
+            "procesy": ("INT", {"default": 6, "min": 1, "max": 32}),
+        }}
+
+    RETURN_TYPES = ("STRING", "STRING", "IMAGE")
+    RETURN_NAMES = ("mp4", "kontrola", "podglad")
+    FUNCTION = "renderuj"
+    CATEGORY = KATEGORIA
+    OUTPUT_NODE = True
+
+    def renderuj(self, zrodlo, seed, procesy):
+        zr = Path(zrodlo.strip().strip('"'))
+        if not zr.exists():
+            raise FileNotFoundError(f"brak pliku: {zr}")
+        pasek = None
+        try:
+            import comfy.utils
+            stan = {"pb": None}
+
+            def pasek(linia):
+                m = re.search(r"klatka (\d+)/(\d+)", linia)
+                if m:
+                    k, n = int(m.group(1)), int(m.group(2))
+                    if stan["pb"] is None:
+                        stan["pb"] = comfy.utils.ProgressBar(n)
+                    stan["pb"].update_absolute(k, n)
+        except ImportError:
+            pass
+        linie = _uruchom([str(ROOT / "skrypty" / "piasek.py"), "--zrodlo", str(zr), "--seed", str(seed),
+                          "--procesy", str(procesy)], pasek)
+        mp4 = next((l.split("→", 1)[1].strip() for l in reversed(linie) if "→" in l and l.strip().endswith(".mp4")), "")
+        if not mp4 or not Path(mp4).exists():
+            raise RuntimeError("nie znaleziono pliku MP4 w wyjściu renderera")
+        kontrola = json.dumps(json.loads(Path(mp4).with_suffix(".qc.json").read_text(encoding="utf-8"))["kontrola"],
+                              ensure_ascii=False, indent=2)
+        pod = _robocze() / "podglad_piasku"
+        shutil.rmtree(pod, ignore_errors=True); pod.mkdir(parents=True)
+        dl = json.loads(kontrola)["dlugosc_obrazu_s"]
+        for i in range(4):
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{dl * (i + 0.5) / 4:.2f}", "-i", mp4, "-frames:v", "1",
+                            str(pod / f"p{i}.png")], env=_env(), check=False)
+        pliki = sorted(pod.glob("p*.png"))
+        return {"ui": {"text": [mp4]}, "result": (mp4, kontrola, _do_tensora(pliki) if pliki else torch.zeros(1, 64, 64, 3))}
+
+
+NODE_CLASS_MAPPINGS = {"MGKlatki": MGKlatki, "MGKlip": MGKlip, "MGKontrola": MGKontrola, "MGPiasek": MGPiasek}
 NODE_DISPLAY_NAME_MAPPINGS = {"MGKlatki": "Muzyka Graficznie – klatki z dźwięku",
                               "MGKlip": "Muzyka Graficznie – klip MP4 (potok + kontrola)",
-                              "MGKontrola": "Muzyka Graficznie – kontrola jakości MP4"}
+                              "MGKontrola": "Muzyka Graficznie – kontrola jakości MP4",
+                              "MGPiasek": "Muzyka Graficznie – piasek fraktalny (klip z dźwięku)"}
 
 
 # ----------------------------------------------------------------------------- stan na żywo (panel)

@@ -28,6 +28,7 @@ WORKFLOWY = {
     "klip": w.wizualizacja_klip,
     "plynna": w.wizualizacja_plynna,
     "ostrzejsza": w.wizualizacja_ostrzejsza,
+    "piasek": w.piasek_fraktalny,
 }
 
 
@@ -89,13 +90,14 @@ def main():
     ap.add_argument("--do", type=float)
     ap.add_argument("--preset")
     ap.add_argument("--mp4", help="ostrzejsza: gotowy plik zamiast renderu")
+    ap.add_argument("--zrodlo", help="piasek: plik z muzyką")
     ap.add_argument("--nazwa", help="nazwa kopii (bez daty); domyślnie z pliku")
     a = ap.parse_args()
     if a.lista or not a.workflow:
         for k, f in WORKFLOWY.items():
             print(f"{k:12s} {(f.__doc__ or '').strip().splitlines()[0]}")
         return
-    kw = {k: v for k, v in dict(od=a.od, do=a.do, preset=a.preset, mp4=a.mp4).items() if v is not None}
+    kw = {k: v for k, v in dict(od=a.od, do=a.do, preset=a.preset, mp4=a.mp4, zrodlo=a.zrodlo).items() if v is not None}
     wf = WORKFLOWY[a.workflow](**kw)
     c = Comfy(timeout=24 * 3600)
     if not c.dziala():

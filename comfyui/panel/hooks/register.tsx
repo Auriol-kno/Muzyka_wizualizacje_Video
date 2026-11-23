@@ -16,8 +16,8 @@ let zegar: { cancel: () => void } | null = null
 
 const czas = (s: number) => {
   const m = Math.floor(s / 60)
-  const h = Math.floor(m / 60)
-  return h ? `${h} h ${m % 60} min` : m ? `${m} min ${Math.round(s % 60)} s` : `${Math.round(s)} s`
+  const godz = Math.floor(m / 60)
+  return godz ? `${godz} h ${m % 60} min` : m ? `${m} min ${Math.round(s % 60)} s` : `${Math.round(s)} s`
 }
 
 const pasek = (v: number, max: number, szer = 20) => {
@@ -140,10 +140,10 @@ export const register: Register = on => {
         {m.historia.length > 0 ? (
           <Box flexDirection="column">
             <Text bold>Historia</Text>
-            {m.historia.slice(0, 6).map(h => (
-              <Text dimColor={h.wynik === 'ok'} color={h.wynik === 'ok' ? undefined : 'error'}>
-                {h.wynik === 'ok' ? '✓' : '✗'} {new Date(h.start * 1000).toLocaleTimeString('pl-PL')}
-                {h.koniec ? ` · ${czas(h.koniec - h.start)}` : ''}{h.blad ? ` · ${h.blad.slice(0, 80)}` : ''}
+            {m.historia.slice(0, 6).map(wpis => (
+              <Text dimColor={wpis.wynik === 'ok'} color={wpis.wynik === 'ok' ? undefined : 'error'}>
+                {wpis.wynik === 'ok' ? '✓' : '✗'} {new Date(wpis.start * 1000).toLocaleTimeString('pl-PL')}
+                {wpis.koniec ? ` · ${czas(wpis.koniec - wpis.start)}` : ''}{wpis.blad ? ` · ${wpis.blad.slice(0, 80)}` : ''}
               </Text>
             ))}
           </Box>
