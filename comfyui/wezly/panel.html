@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Muzyka Graficznie – przepływ pracy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --tlo:#0b0d14; --karta:#141823; --linia:#262c3b; --tekst:#e6e2d8; --szary:#8a8f9c;
+          --liczy:#f2b046; --ok:#5fcf8f; --blad:#ff6b6b; --czeka:#4a5061; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--tlo); color:var(--tekst); font:14px/1.45 system-ui, "Segoe UI", sans-serif; }
+  header { padding:14px 18px; border-bottom:1px solid var(--linia); display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; font-weight:600; }
+  .kropka { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .info { color:var(--szary); font-size:13px; }
+  main { padding:16px 18px; max-width:760px; }
+  h2 { font-size:14px; margin:18px 0 10px; color:var(--szary); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .blok { background:var(--karta); border:1px solid var(--linia); border-left:4px solid var(--czeka); border-radius:8px; padding:10px 12px; }
+  .blok.liczy { border-left-color:var(--liczy); box-shadow:0 0 0 1px rgba(242,176,70,.25); }
+  .blok.gotowe, .blok.z_pamieci { border-left-color:var(--ok); }
+  .blok.blad { border-left-color:var(--blad); }
+  .tytul { font-weight:600; }
+  .pod { color:var(--szary); font-size:12.5px; margin-top:2px; }
+  .strzalka { text-align:center; color:var(--czeka); margin:3px 0; font-size:15px; }
+  .pasek { height:8px; background:#222838; border-radius:5px; margin-top:8px; overflow:hidden; }
+  .pasek > div { height:100%; background:linear-gradient(90deg,#c07a48,#f2b046); transition:width .6s; }
+  .wynik { font:12px/1.4 ui-monospace, Consolas, monospace; color:#b9c0cf; white-space:pre-wrap; margin-top:6px; max-height:9em; overflow:auto; }
+  .hist { display:flex; gap:8px; padding:5px 0; border-bottom:1px solid var(--linia); font-size:13px; }
+  .bezczynny { color:var(--szary); padding:12px; border:1px dashed var(--linia); border-radius:8px; }
+  .blad-txt { color:var(--blad); margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Muzyka Graficznie – przepływ pracy</h1>
+  <span class="info" id="serwer"><span class="kropka" style="background:var(--czeka)"></span>łączę…</span>
+  <span class="info" id="vram"></span>
+  <span class="info" id="kolejka"></span>
+</header>
+<main>
+  <div id="teraz"></div>
+  <div id="ostatnie"></div>
+  <h2>Historia</h2>
+  <div id="historia" class="info">–</div>
+</main>
+<script>
+const ZNAK = { liczy:"▶", gotowe:"✓", "z pamięci":"✓", "błąd":"✗", czeka:"○" };
+const KLASA = s => ({ "z pamięci":"z_pamieci", "błąd":"blad" }[s] || s);
+const czas = s => { s = Math.max(0, s); const m = Math.floor(s/60), h = Math.floor(m/60);
+  return h ? `${h} h ${m%60} min` : m ? `${m} min ${Math.round(s%60)} s` : `${Math.round(s)} s`; };
+const esc = t => String(t ?? "").replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
+
+function bloki(z, teraz) {
+  return z.bloki.map((b, i) => {
+    const trwa = b.start ? czas((b.koniec ?? (b.stan === "liczy" ? teraz : b.start)) - b.start) : "";
+    let pasek = "", eta = "";
+    if (b.stan === "liczy" && b.max) {
+      const p = Math.min(1, (b.value || 0) / b.max);
+      pasek = `<div class="pasek"><div style="width:${(p*100).toFixed(1)}%"></div></div>`;
+      if (p > 0.01 && b.start) eta = ` · zostało ~${czas((teraz - b.start) * (1 - p) / p)}`;
+      eta = ` · ${b.value}/${b.max} (${Math.round(p*100)}%)` + eta;
+    }
+    return (i ? `<div class="strzalka">↓</div>` : "") +
+      `<div class="blok ${KLASA(b.stan)}"><div class="tytul">${ZNAK[b.stan] || "○"} ${esc(b.tytul)}</div>` +
+      `<div class="pod">${esc(b.stan)}${trwa ? " · " + trwa : ""}${eta}${b.typ !== b.tytul ? " · " + esc(b.typ) : ""}</div>` +
+      pasek + (b.wynik ? `<div class="wynik">${esc(b.wynik)}</div>` : "") + `</div>`;
+  }).join("") + (z.blad ? `<div class="blad-txt">${esc(z.blad)}</div>` : "");
+}
+
+async function odswiez() {
+  try {
+    const d = await (await fetch("/mg/stan", { cache:"no-store" })).json();
+    document.getElementById("serwer").innerHTML = `<span class="kropka" style="background:var(--ok)"></span>ComfyUI działa`;
+    document.getElementById("kolejka").textContent = `w kolejce: ${d.w_kolejce}`;
+    document.getElementById("teraz").innerHTML = d.biezace
+      ? `<h2>Teraz liczy · ${czas(d.teraz - d.biezace.start)}</h2>` + bloki(d.biezace, d.teraz)
+      : `<h2>Teraz</h2><div class="bezczynny">Bezczynny – nic się nie liczy.</div>`;
+    document.getElementById("ostatnie").innerHTML = (!d.biezace && d.ostatnie)
+      ? `<h2>Ostatnie zadanie · ${esc(d.ostatnie.wynik)}${d.ostatnie.koniec ? " · " + czas(d.ostatnie.koniec - d.ostatnie.start) : ""}</h2>` + bloki(d.ostatnie, d.teraz)
+      : "";
+    document.getElementById("historia").innerHTML = d.historia.length ? d.historia.map(h =>
+      `<div class="hist"><span style="color:${h.wynik === "ok" ? "var(--ok)" : "var(--blad)"}">${h.wynik === "ok" ? "✓" : "✗"}</span>` +
+      `<span>${new Date(h.start*1000).toLocaleTimeString("pl-PL")}</span><span class="info">${h.koniec ? czas(h.koniec - h.start) : ""}</span>` +
+      `<span class="info">${esc((h.wezly || []).join(" → "))}</span>${h.blad ? `<span style="color:var(--blad)">${esc(h.blad.slice(0,90))}</span>` : ""}</div>`).join("")
+      : "–";
+  } catch (e) {
+    document.getElementById("serwer").innerHTML = `<span class="kropka" style="background:var(--blad)"></span>ComfyUI nie odpowiada`;
+  }
+  try {
+    const s = await (await fetch("/system_stats", { cache:"no-store" })).json();
+    const g = s.devices && s.devices[0];
+    if (g) document.getElementById("vram").textContent =
+      `${g.name.split(" : ")[0].replace(/^cuda:\d+\s*/, "")} · VRAM wolne ${(g.vram_free/2**30).toFixed(1)}/${(g.vram_total/2**30).toFixed(1)} GB · RAM wolne ${(s.system.ram_free/2**30).toFixed(1)} GB`;
+  } catch (e) {}
+}
+odswiez(); setInterval(odswiez, 1500);
+</script>
+</body>
+</html>

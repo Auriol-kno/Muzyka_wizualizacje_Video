@@ -1,0 +1,24 @@
+{
+  "1": {
+    "class_type": "MGKlip",
+    "inputs": {
+      "wav": "Frederic_Chopin_-_Nocturne_Eb_major_Opus_9,_number_2.wav",
+      "preset": "3_gory_ze_strun",
+      "od_s": 0.0,
+      "do_s": 10.0,
+      "fps": 25,
+      "rozmiar": "1280x720",
+      "seed": 20261122,
+      "podpis": "Fryderyk Chopin – Nokturn Es-dur op. 9 nr 2\\nwyk. Martha Goldstein · CC BY-SA 2.0"
+    }
+  },
+  "2": {
+    "class_type": "PreviewImage",
+    "inputs": {
+      "images": [
+        "1",
+        2
+      ]
+    }
+  }
+}
